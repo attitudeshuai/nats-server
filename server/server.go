@@ -3079,6 +3079,7 @@ const (
 	SubszPath        = "/subsz"
 	StackszPath      = "/stacksz"
 	AccountzPath     = "/accountz"
+	SnapshotzPath    = "/snapshotz"
 	AccountStatzPath = "/accstatz"
 	JszPath          = "/jsz"
 	HealthzPath      = "/healthz"
@@ -3193,6 +3194,8 @@ func (s *Server) startMonitoring(secure bool) error {
 	mux.HandleFunc(s.basePath(StackszPath), s.HandleStacksz)
 	// Accountz
 	mux.HandleFunc(s.basePath(AccountzPath), s.HandleAccountz)
+	// Snapshotz (point-in-time multi-view snapshot)
+	mux.HandleFunc(s.basePath(SnapshotzPath), s.HandleSnapshotz)
 	// Accstatz
 	mux.HandleFunc(s.basePath(AccountStatzPath), s.HandleAccountStatz)
 	// Jsz

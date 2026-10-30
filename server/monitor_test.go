@@ -6512,7 +6512,7 @@ func TestMonitorAccountszMappingOrderReporting(t *testing.T) {
 	s, _ := RunServerWithConfig(conf)
 	defer s.Shutdown()
 
-	az, err := s.Accountz(&AccountzOptions{"APP"})
+	az, err := s.Accountz(&AccountzOptions{Account: "APP"})
 	require_NoError(t, err)
 	require_NotNil(t, az.Account)
 	require_True(t, len(az.Account.Imports) > 0)

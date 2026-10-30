@@ -3118,7 +3118,7 @@ func TestAccountRouteMappingsConfiguration(t *testing.T) {
 		t.Fatalf("Account %q does not have mappings", "synadia")
 	}
 
-	az, err := s.Accountz(&AccountzOptions{"synadia"})
+	az, err := s.Accountz(&AccountzOptions{Account: "synadia"})
 	if err != nil {
 		t.Fatalf("Error getting Accountz: %v", err)
 	}

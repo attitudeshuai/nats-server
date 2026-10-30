@@ -54,6 +54,10 @@ type Connz struct {
 	Offset   int         `json:"offset"`
 	Limit    int         `json:"limit"`
 	Conns    []*ConnInfo `json:"connections"`
+
+	// SnapshotTrunc is set only when this view is collected as part of a
+	// Snapshotz response and the shared snapshot budget truncated entries.
+	SnapshotTrunc *SnapshotTruncation `json:"snapshot_truncated,omitempty"`
 }
 
 // ConnzOptions are the options passed to Connz()
@@ -97,6 +101,10 @@ type ConnzOptions struct {
 
 	// Filter by subject interest
 	FilterSubject string `json:"filter_subject"`
+
+	// snap, when set, sources the result from a shared snapshot freeze. It is
+	// unexported so only the Snapshotz collector can set it.
+	snap *monitorSnapshot
 }
 
 // ConnState is for filtering states of connections. We will only have two, open and closed.
@@ -217,9 +225,12 @@ func (s *Server) Connz(opts *ConnzOptions) (*Connz, error) {
 		a       *Account
 		filter  string
 		mqttCID string
+		snap    *monitorSnapshot
 	)
 
 	if opts != nil {
+		snap = opts.snap
+
 		// If no sort option given or sort is by uptime, then sort by cid
 		if opts.Sort != _EMPTY_ {
 			sortOpt = opts.Sort
@@ -269,10 +280,14 @@ func (s *Server) Connz(opts *ConnzOptions) (*Connz, error) {
 		}
 	}
 
+	now := time.Now().UTC()
+	if snap != nil {
+		now = snap.now
+	}
 	c := &Connz{
 		Offset: offset,
 		Limit:  limit,
-		Now:    time.Now().UTC(),
+		Now:    now,
 	}
 
 	// Open clients
@@ -285,49 +300,72 @@ func (s *Server) Connz(opts *ConnzOptions) (*Connz, error) {
 	var clist map[uint64]*client
 
 	if acc != _EMPTY_ {
-		var err error
-		a, err = s.lookupAccount(acc)
-		if err != nil {
-			return c, nil
-		}
-		a.mu.RLock()
-		clist = make(map[uint64]*client, a.numLocalConnections())
-		for c := range a.clients {
-			if c.kind == CLIENT || c.kind == LEAF {
-				clist[c.cid] = c
+		if snap != nil {
+			// Account membership is taken from the frozen instant. An account
+			// absent from the snapshot yields an empty result, exactly like
+			// the lookupAccount miss below.
+			if _, ok := snap.slStats[acc]; !ok {
+				return c, nil
 			}
+		} else {
+			var err error
+			a, err = s.lookupAccount(acc)
+			if err != nil {
+				return c, nil
+			}
+			a.mu.RLock()
+			clist = make(map[uint64]*client, a.numLocalConnections())
+			for c := range a.clients {
+				if c.kind == CLIENT || c.kind == LEAF {
+					clist[c.cid] = c
+				}
+			}
+			a.mu.RUnlock()
 		}
-		a.mu.RUnlock()
 	}
 
-	// Snapshot server connection state.
-	s.mu.RLock()
-	// Default to all client unless filled in above.
-	if clist == nil {
-		clist = make(map[uint64]*client, len(s.clients)+len(s.leafs))
-		maps.Copy(clist, s.clients)
-		maps.Copy(clist, s.leafs)
-	}
+	if snap != nil {
+		// Use the connection set captured at the snapshot instant.
+		clist = make(map[uint64]*client, len(snap.clients))
+		maps.Copy(clist, snap.clients)
 
-	// copy the server id for monitoring
-	c.ID = s.info.ID
-	// select client by CID
-	if cid > 0 {
-		cidClient = clist[cid]
+		// copy the server id for monitoring
+		c.ID = snap.serverID
+		// select client by CID
+		if cid > 0 {
+			cidClient = clist[cid]
+		}
+	} else {
+		// Snapshot server connection state.
+		s.mu.RLock()
+		// Default to all client unless filled in above.
+		if clist == nil {
+			clist = make(map[uint64]*client, len(s.clients)+len(s.leafs))
+			maps.Copy(clist, s.clients)
+			maps.Copy(clist, s.leafs)
+		}
+
+		// copy the server id for monitoring
+		c.ID = s.info.ID
+		// select client by CID
+		if cid > 0 {
+			cidClient = clist[cid]
+		}
+		s.mu.RUnlock()
 	}
-	s.mu.RUnlock()
 
 	// Number of total clients. The resulting ConnInfo array
 	// may be smaller if pagination is used.
+	closedAt := snapshotClosedClients(snap, s)
 	switch state {
 	case ConnOpen:
 		c.Total = len(clist)
 	case ConnClosed:
-		closedClients = s.closed.closedClients()
+		closedClients = closedAt
 		c.Total = len(closedClients)
 	case ConnAll:
 		c.Total = len(clist)
-		closedClients = s.closed.closedClients()
+		closedClients = closedAt
 		c.Total += len(closedClients)
 	}
 
@@ -410,6 +448,12 @@ func (s *Server) Connz(opts *ConnzOptions) (*Connz, error) {
 				cAuthUser := client.getRawAuthUser()
 				cMQTTID := client.getMQTTClientID()
 				client.mu.RUnlock()
+
+				if snap != nil {
+					// Use the single frozen attribution read so account
+					// scoping and accountz counts cannot disagree.
+					cAccName = snap.clientAcc[client]
+				}
 
 				// If we have an account specified we need to filter.
 				if acc != _EMPTY_ && cAccName != acc {
@@ -818,6 +862,10 @@ type Routez struct {
 	Export    *SubjectPermission `json:"export,omitempty"`
 	NumRoutes int                `json:"num_routes"`
 	Routes    []*RouteInfo       `json:"routes"`
+
+	// SnapshotTrunc is set only when this view is collected as part of a
+	// Snapshotz response and the shared snapshot budget truncated entries.
+	SnapshotTrunc *SnapshotTruncation `json:"snapshot_truncated,omitempty"`
 }
 
 // RoutezOptions are options passed to Routez
@@ -826,6 +874,9 @@ type RoutezOptions struct {
 	Subscriptions bool `json:"subscriptions"`
 	// SubscriptionsDetail indicates if subscription details should be included in the results
 	SubscriptionsDetail bool `json:"subscriptions_detail"`
+
+	// snap, when set, sources the result from a shared snapshot freeze.
+	snap *monitorSnapshot
 }
 
 // RouteInfo has detailed information on a per connection basis.
@@ -858,27 +909,18 @@ type RouteInfo struct {
 
 // Routez returns a Routez struct containing information about routes.
 func (s *Server) Routez(routezOpts *RoutezOptions) (*Routez, error) {
-	rs := &Routez{
-		Now:    time.Now().UTC(),
-		Routes: []*RouteInfo{},
-	}
-
 	if routezOpts == nil {
 		routezOpts = &RoutezOptions{}
 	}
-
-	s.mu.Lock()
-	rs.NumRoutes = s.numRoutes()
-
-	// copy the server id for monitoring
-	rs.ID = s.info.ID
-
-	// Check for defined permissions for all connected routes.
-	if perms := s.getOpts().Cluster.Permissions; perms != nil {
-		rs.Import = perms.Import
-		rs.Export = perms.Export
+	snap := routezOpts.snap
+	now := time.Now().UTC()
+	if snap != nil {
+		now = snap.now
 	}
-	rs.Name = s.info.Name
+	rs := &Routez{
+		Now:    now,
+		Routes: []*RouteInfo{},
+	}
 
 	addRoute := func(r *client) {
 		r.mu.Lock()
@@ -923,11 +965,40 @@ func (s *Server) Routez(routezOpts *RoutezOptions) (*Routez, error) {
 		rs.Routes = append(rs.Routes, ri)
 	}
 
-	// Walk the list
-	s.forEachRoute(func(r *client) {
-		addRoute(r)
-	})
-	s.mu.Unlock()
+	if snap != nil {
+		// Walk the route list captured at the snapshot instant.
+		rs.NumRoutes = len(snap.routes)
+		rs.ID = snap.serverID
+
+		// Check for defined permissions for all connected routes.
+		if perms := s.getOpts().Cluster.Permissions; perms != nil {
+			rs.Import = perms.Import
+			rs.Export = perms.Export
+		}
+		rs.Name = snap.serverName
+		for _, r := range snap.routes {
+			addRoute(r)
+		}
+	} else {
+		s.mu.Lock()
+		rs.NumRoutes = s.numRoutes()
+
+		// copy the server id for monitoring
+		rs.ID = s.info.ID
+
+		// Check for defined permissions for all connected routes.
+		if perms := s.getOpts().Cluster.Permissions; perms != nil {
+			rs.Import = perms.Import
+			rs.Export = perms.Export
+		}
+		rs.Name = s.info.Name
+
+		// Walk the list
+		s.forEachRoute(func(r *client) {
+			addRoute(r)
+		})
+		s.mu.Unlock()
+	}
 	return rs, nil
 }
 
@@ -964,6 +1035,10 @@ type Subsz struct {
 	Offset int         `json:"offset"`
 	Limit  int         `json:"limit"`
 	Subs   []SubDetail `json:"subscriptions_list,omitempty"`
+
+	// SnapshotTrunc is set only when this view is collected as part of a
+	// Snapshotz response and the shared snapshot budget truncated entries.
+	SnapshotTrunc *SnapshotTruncation `json:"snapshot_truncated,omitempty"`
 }
 
 // SubszOptions are the options passed to Subsz.
@@ -985,6 +1060,9 @@ type SubszOptions struct {
 	// Test the list against this subject. Needs to be literal since it signifies a publish subject.
 	// We will only return subscriptions that would match if a message was sent to this subject.
 	Test string `json:"test,omitempty"`
+
+	// snap, when set, sources the result from a shared snapshot freeze.
+	snap *monitorSnapshot
 }
 
 // SubDetail is for verbose information for subscriptions.
@@ -1028,10 +1106,12 @@ func (s *Server) Subsz(opts *SubszOptions) (*Subsz, error) {
 		testSub   string
 		filterAcc string
 		limit     = DefaultSubListSize
+		snap      *monitorSnapshot
 	)
 
 	if opts != nil {
 		subdetail = opts.Subscriptions
+		snap = opts.snap
 		offset = opts.Offset
 		if offset < 0 {
 			offset = 0
@@ -1054,10 +1134,17 @@ func (s *Server) Subsz(opts *SubszOptions) (*Subsz, error) {
 
 	slStats := &SublistStats{}
 
+	now := time.Now().UTC()
+	id := s.info.ID
+	if snap != nil {
+		now = snap.now
+		id = snap.serverID
+	}
+
 	// FIXME(dlc) - Make account aware.
 	sz := &Subsz{
-		ID:           s.info.ID,
-		Now:          time.Now().UTC(),
+		ID:           id,
+		Now:          now,
 		SublistStats: slStats,
 		Total:        0,
 		Offset:       offset,
@@ -1066,17 +1153,24 @@ func (s *Server) Subsz(opts *SubszOptions) (*Subsz, error) {
 	}
 
 	if subdetail {
-		var raw [4096]*subscription
-		subs := raw[:0]
-		s.accounts.Range(func(k, v any) bool {
-			acc := v.(*Account)
-			if filterAcc != _EMPTY_ && acc.GetName() != filterAcc {
+		var subs []*subscription
+		if snap != nil {
+			// Subscriptions and stats come from the frozen instant.
+			subs = snap.subs
+			snap.aggregateSublistStats(slStats, filterAcc)
+		} else {
+			var raw [4096]*subscription
+			subs = raw[:0]
+			s.accounts.Range(func(k, v any) bool {
+				acc := v.(*Account)
+				if filterAcc != _EMPTY_ && acc.GetName() != filterAcc {
+					return true
+				}
+				slStats.add(acc.sl.Stats())
+				acc.sl.localSubs(&subs, false)
 				return true
-			}
-			slStats.add(acc.sl.Stats())
-			acc.sl.localSubs(&subs, false)
-			return true
-		})
+			})
+		}
 
 		details := make([]SubDetail, 0, len(subs))
 		i := 0
@@ -1089,9 +1183,22 @@ func (s *Server) Subsz(opts *SubszOptions) (*Subsz, error) {
 			if sub.client == nil {
 				continue
 			}
+			if snap != nil {
+				// Cross-view existence guarantee: a subscription may only
+				// appear when its connection belongs to the frozen entity
+				// set, i.e. it is also visible in the connection or route
+				// view of this same snapshot.
+				if _, ok := snap.entities[sub.client]; !ok {
+					continue
+				}
+			}
 			sub.client.mu.Lock()
-			details = append(details, newSubDetail(sub))
+			sd := newSubDetail(sub)
 			sub.client.mu.Unlock()
+			if snap != nil && filterAcc != _EMPTY_ && snap.clientAcc[sub.client] != filterAcc {
+				continue
+			}
+			details = append(details, sd)
 			i++
 		}
 		// Make sure these are sane.
@@ -1100,6 +1207,8 @@ func (s *Server) Subsz(opts *SubszOptions) (*Subsz, error) {
 		maxoff := minoff + min(sz.Limit, maxIndex-minoff)
 		sz.Subs = details[minoff:maxoff]
 		sz.Total = len(details)
+	} else if snap != nil {
+		snap.aggregateSublistStats(slStats, filterAcc)
 	} else {
 		s.accounts.Range(func(k, v any) bool {
 			acc := v.(*Account)
@@ -2721,6 +2830,9 @@ func (reason ClosedState) String() string {
 type AccountzOptions struct {
 	// Account indicates that Accountz will return details for the account
 	Account string `json:"account"`
+
+	// snap, when set, sources the result from a shared snapshot freeze.
+	snap *monitorSnapshot
 }
 
 func newExtServiceLatency(l *serviceLatency) *jwt.ServiceLatency {
@@ -2787,6 +2899,10 @@ type Accountz struct {
 	SystemAccount string       `json:"system_account,omitempty"`
 	Accounts      []string     `json:"accounts,omitempty"`
 	Account       *AccountInfo `json:"account_detail,omitempty"`
+
+	// SnapshotTrunc is set only when this view is collected as part of a
+	// Snapshotz response and the shared snapshot budget truncated entries.
+	SnapshotTrunc *SnapshotTruncation `json:"snapshot_truncated,omitempty"`
 }
 
 // HandleAccountz process HTTP requests for account information.
@@ -2794,7 +2910,7 @@ func (s *Server) HandleAccountz(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.httpReqStats[AccountzPath]++
 	s.mu.Unlock()
-	if l, err := s.Accountz(&AccountzOptions{r.URL.Query().Get("acc")}); err != nil {
+	if l, err := s.Accountz(&AccountzOptions{Account: r.URL.Query().Get("acc")}); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 	} else if b, err := json.MarshalIndent(l, "", "  "); err != nil {
@@ -2807,24 +2923,58 @@ func (s *Server) HandleAccountz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Accountz(optz *AccountzOptions) (*Accountz, error) {
-	a := &Accountz{
-		ID:  s.ID(),
-		Now: time.Now().UTC(),
+	var snap *monitorSnapshot
+	if optz != nil {
+		snap = optz.snap
 	}
-	if sacc := s.SystemAccount(); sacc != nil {
-		a.SystemAccount = sacc.GetName()
+
+	a := &Accountz{}
+	if snap != nil {
+		a.ID = snap.serverID
+		a.Now = snap.now
+		a.SystemAccount = snap.systemAccount
+	} else {
+		a.ID = s.ID()
+		a.Now = time.Now().UTC()
+		if sacc := s.SystemAccount(); sacc != nil {
+			a.SystemAccount = sacc.GetName()
+		}
 	}
+
 	if optz == nil || optz.Account == _EMPTY_ {
 		a.Accounts = []string{}
-		s.accounts.Range(func(key, value any) bool {
-			a.Accounts = append(a.Accounts, key.(string))
-			return true
-		})
+		if snap != nil {
+			// Account list captured at the snapshot instant.
+			a.Accounts = append(a.Accounts, snap.accounts...)
+		} else {
+			s.accounts.Range(func(key, value any) bool {
+				a.Accounts = append(a.Accounts, key.(string))
+				return true
+			})
+		}
 		return a, nil
 	}
+
+	if snap != nil {
+		// The account must exist at the snapshot instant.
+		if _, ok := snap.slStats[optz.Account]; !ok {
+			return nil, fmt.Errorf("Account %s does not exist", optz.Account)
+		}
+	}
+
 	aInfo, err := s.accountInfo(optz.Account)
 	if err != nil {
 		return nil, err
+	}
+	if snap != nil {
+		// Replace the existence-sensitive counts with values derived from the
+		// same frozen entity set the connection and subscription views use.
+		aInfo.ClientCnt = snap.clientCnt[optz.Account]
+		aInfo.LeafCnt = snap.leafCnt[optz.Account]
+		if st := snap.slStats[optz.Account]; st != nil {
+			aInfo.SubCnt = st.NumSubs
+			aInfo.Sublist = st
+		}
 	}
 	a.Account = aInfo
 	return a, nil
