@@ -678,6 +678,25 @@ func (m *maxPayloadOption) Apply(server *Server) {
 	server.Noticef("Reloaded: max_payload = %d", m.newValue)
 }
 
+// publishStatsOption implements the option interface for the `publish_stats`
+// setting. Enabling or changing the capacity installs a fresh zero-state
+// ledger; disabling removes it; enabling with an unchanged capacity preserves
+// the running ledger.
+type publishStatsOption struct {
+	noopOption
+	oldValue PublishStatsOpts
+	newValue PublishStatsOpts
+}
+
+func (p *publishStatsOption) Apply(server *Server) {
+	server.applyPublishStats(p.oldValue, p.newValue)
+	if p.newValue.Enabled {
+		server.Noticef("Reloaded: publish_stats = enabled (max_subjects_per_account=%d)", p.newValue.capacity())
+	} else {
+		server.Noticef("Reloaded: publish_stats = disabled")
+	}
+}
+
 // pingIntervalOption implements the option interface for the `ping_interval`
 // setting.
 type pingIntervalOption struct {
@@ -1607,7 +1626,8 @@ func imposeOrder(value any) error {
 		slices.Sort(value.AllowedOrigins)
 	case string, bool, uint8, uint16, uint64, int, int32, int64, time.Duration, float64, nil, LeafNodeOpts, ClusterOpts, *tls.Config, PinnedCertSet,
 		*URLAccResolver, *MemAccResolver, *DirAccResolver, *CacheDirAccResolver, Authentication, MQTTOpts, jwt.TagList,
-		*OCSPConfig, map[string]string, map[string]bool, JSLimitOpts, StoreCipher, *OCSPResponseCacheConfig, *ProxiesConfig, WriteTimeoutPolicy:
+		*OCSPConfig, map[string]string, map[string]bool, JSLimitOpts, StoreCipher, *OCSPResponseCacheConfig, *ProxiesConfig, WriteTimeoutPolicy,
+		PublishStatsOpts:
 		// explicitly skipped types
 	case *AuthCallout:
 	case JSTpmOpts:
@@ -1768,6 +1788,11 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 			diffOpts = append(diffOpts, &maxControlLineOption{newValue: newValue.(int32)})
 		case "maxpayload":
 			diffOpts = append(diffOpts, &maxPayloadOption{newValue: newValue.(int32)})
+		case "publishstats":
+			diffOpts = append(diffOpts, &publishStatsOption{
+				oldValue: oldValue.(PublishStatsOpts),
+				newValue: newValue.(PublishStatsOpts),
+			})
 		case "pinginterval":
 			diffOpts = append(diffOpts, &pingIntervalOption{newValue: newValue.(time.Duration)})
 		case "maxpingsout":
@@ -2295,10 +2320,16 @@ func (s *Server) reloadAuthorization(closeCallouts bool) {
 					if err := s.updateAccountWithClaimJWT(acc, claimJWT); err != nil {
 						s.Noticef("Reloaded: deleting account [bad claims]: %q", accName)
 						s.accounts.Delete(k)
+						if m := s.pubStats.Load(); m != nil {
+							m.remove(acc)
+						}
 					}
 				} else {
 					s.Noticef("Reloaded: deleting account [removed]: %q", accName)
 					s.accounts.Delete(k)
+					if m := s.pubStats.Load(); m != nil {
+						m.remove(acc)
+					}
 				}
 				// Regrab server lock.
 				s.mu.Lock()
@@ -2367,6 +2398,11 @@ func (s *Server) reloadAuthorization(closeCallouts bool) {
 		}
 		acc.mu.Unlock()
 		acc.removeAllServiceImportSubs()
+		// Drop the optional per-subject publish ledger so a recreated
+		// account of the same name starts from zero.
+		if m := s.pubStats.Load(); m != nil {
+			m.remove(acc)
+		}
 	}
 
 	if resetCh != nil {

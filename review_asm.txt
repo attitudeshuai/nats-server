@@ -1,0 +1,850 @@
+﻿TEXT github.com/nats-io/nats-server/v2/server.(*client).processInboundClientMsg(SB) D:/charlesshuai/LearningSpace/projects/AI/ai-eval-workspace/sessions/swe-like/session-0001/repos/nats-server/nats-server-13/server/client.go
+  client.go:4430	0x14054a5a0		4c8da42470feffff	LEAQ 0xfffffe70(SP), R12									
+  client.go:4430	0x14054a5a8		4d3b6610		CMPQ R12, 0x10(R14)										
+  client.go:4430	0x14054a5ac		0f8623100000		JBE 0x14054b5d5											
+  client.go:4430	0x14054a5b2		55			PUSHQ BP											
+  client.go:4430	0x14054a5b3		4889e5			MOVQ SP, BP											
+  client.go:4430	0x14054a5b6		4881ec08020000		SUBQ $0x208, SP											
+  client.go:4437	0x14054a5bd		4889bc2430020000	MOVQ DI, 0x230(SP)										
+  client.go:4437	0x14054a5c5		48898c2428020000	MOVQ CX, 0x228(SP)										
+  client.go:4437	0x14054a5cd		48899c2420020000	MOVQ BX, 0x220(SP)										
+  client.go:4433	0x14054a5d5		ff80b8000000		INCL 0xb8(AX)											
+  client.go:4434	0x14054a5db		488d51fe		LEAQ -0x2(CX), DX										
+  client.go:4434	0x14054a5df		48899424e0000000	MOVQ DX, 0xe0(SP)										
+  client.go:4434	0x14054a5e7		0190bc000000		ADDL DX, 0xbc(AX)										
+  client.go:4437	0x14054a5ed		4883786800		CMPQ 0x68(AX), $0x0										
+  client.go:4437	0x14054a5f2		0f8580000000		JNE 0x14054a678											
+  client.go:4437	0x14054a5f8		488bb078010000		MOVQ 0x178(AX), SI										
+  client.go:4437	0x14054a5ff		4c8b8070010000		MOVQ 0x170(AX), R8										
+  gateway.go:2479	0x14054a606		4883fe05		CMPQ SI, $0x5											
+  gateway.go:2479	0x14054a60a		7e22			JLE 0x14054a62e											
+  store.go:855		0x14054a60c		4d89c1			MOVQ R8, R9											
+  store.go:855		0x14054a60f		49f7d8			NEGQ R8												
+  store.go:855		0x14054a612		4983f805		CMPQ R8, $0x5											
+  store.go:855		0x14054a616		0f82a90f0000		JB 0x14054b5c5											
+  gateway.go:2479	0x14054a61c		4181395f47525f		CMPL 0(R9), $0x5f52475f										
+  gateway.go:2479	0x14054a623		750c			JNE 0x14054a631											
+  gateway.go:2479	0x14054a625		418079042e		CMPB 0x4(R9), $0x2e										
+  gateway.go:2479	0x14054a62a		7505			JNE 0x14054a631											
+  gateway.go:2479	0x14054a62c		eb28			JMP 0x14054a656											
+  store.go:855		0x14054a62e		4d89c1			MOVQ R8, R9											
+  gateway.go:2482	0x14054a631		4883fe04		CMPQ SI, $0x4											
+  gateway.go:2482	0x14054a635		7e41			JLE 0x14054a678											
+  store.go:855		0x14054a637		4d89c8			MOVQ R9, R8											
+  store.go:855		0x14054a63a		49f7d9			NEGQ R9												
+  store.go:855		0x14054a63d		0f1f00			NOPL 0(AX)											
+  store.go:855		0x14054a640		4983f904		CMPQ R9, $0x4											
+  store.go:855		0x14054a644		0f826a0f0000		JB 0x14054b5b4											
+  gateway.go:2482	0x14054a64a		4181382447522e		CMPL 0(R8), $0x2e524724										
+  client.go:4437	0x14054a651		7525			JNE 0x14054a678											
+  client.go:4438	0x14054a653		4d89c1			MOVQ R8, R9											
+  client.go:4437	0x14054a656		488bb880010000		MOVQ 0x180(AX), DI										
+  client.go:4438	0x14054a65d		4c89cb			MOVQ R9, BX											
+  client.go:4438	0x14054a660		4889f1			MOVQ SI, CX											
+  client.go:4438	0x14054a663		e8f88e0000		CALL github.com/nats-io/nats-server/v2/server.(*client).pubPermissionViolation(SB)		
+  client.go:4439	0x14054a668		31c0			XORL AX, AX											
+  client.go:4439	0x14054a66a		bb01000000		MOVL $0x1, BX											
+  client.go:4439	0x14054a66f		4881c408020000		ADDQ $0x208, SP											
+  client.go:4439	0x14054a676		5d			POPQ BP												
+  client.go:4439	0x14054a677		c3			RET												
+  client.go:4437	0x14054a678		4889842418020000	MOVQ AX, 0x218(SP)										
+  client.go:4443	0x14054a680		480544140000		ADDQ $0x1444, AX										
+  client.go:4443	0x14054a686		4889842450010000	MOVQ AX, 0x150(SP)										
+  client.go:4443	0x14054a68e		e86d1cb5ff		CALL sync.(*RWMutex).Lock(SB)									
+  client.go:4444	0x14054a693		488b8c2418020000	MOVQ 0x218(SP), CX										
+  client.go:4444	0x14054a69b		4883797000		CMPQ 0x70(CX), $0x0										
+  client.go:4444	0x14054a6a0		0f8470080000		JE 0x14054af16											
+  client.go:4444	0x14054a6a6		488b5178		MOVQ 0x78(CX), DX										
+  client.go:4444	0x14054a6aa		4885d2			TESTQ DX, DX											
+  client.go:4444	0x14054a6ad		0f8463080000		JE 0x14054af16											
+  client.go:4444	0x14054a6b3		4889942448010000	MOVQ DX, 0x148(SP)										
+  client.go:4449	0x14054a6bb		488bb2f8010000		MOVQ 0x1f8(DX), SI										
+  client.go:4449	0x14054a6c2		4889b42440010000	MOVQ SI, 0x140(SP)										
+  client.go:4449	0x14054a6ca		8406			TESTB AL, 0(SI)											
+  client.go:4452	0x14054a6cc		488bb980000000		MOVQ 0x80(CX), DI										
+  client.go:4452	0x14054a6d3		4885ff			TESTQ DI, DI											
+  client.go:4452	0x14054a6d6		0f8480000000		JE 0x14054a75c											
+  client.go:4452	0x14054a6dc		48837f1800		CMPQ 0x18(DI), $0x0										
+  client.go:4452	0x14054a6e1		7507			JNE 0x14054a6ea											
+  client.go:4452	0x14054a6e3		48837f2000		CMPQ 0x20(DI), $0x0										
+  client.go:4452	0x14054a6e8		7472			JE 0x14054a75c											
+  client.go:4453	0x14054a6ea		488b9970010000		MOVQ 0x170(CX), BX										
+  client.go:4453	0x14054a6f1		488b8978010000		MOVQ 0x178(CX), CX										
+  client.go:4453	0x14054a6f8		31c0			XORL AX, AX											
+  client.go:4453	0x14054a6fa		e84107b2ff		CALL runtime.slicebytetostring(SB)								
+  client.go:4453	0x14054a6ff		4889d9			MOVQ BX, CX											
+  client.go:4453	0x14054a702		bf01000000		MOVL $0x1, DI											
+  client.go:4453	0x14054a707		89fe			MOVL DI, SI											
+  client.go:4453	0x14054a709		4889c3			MOVQ AX, BX											
+  client.go:4453	0x14054a70c		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4453	0x14054a714		e8c7f6ffff		CALL github.com/nats-io/nats-server/v2/server.(*client).pubAllowedFullCheck(SB)			
+  client.go:4453	0x14054a719		84c0			TESTL AL, AL											
+  client.go:4453	0x14054a71b		753f			JNE 0x14054a75c											
+  client.go:4454	0x14054a71d		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4454	0x14054a725		e8161db5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4455	0x14054a72a		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4455	0x14054a732		488b9870010000		MOVQ 0x170(AX), BX										
+  client.go:4455	0x14054a739		488b8878010000		MOVQ 0x178(AX), CX										
+  client.go:4455	0x14054a740		488bb880010000		MOVQ 0x180(AX), DI										
+  client.go:4455	0x14054a747		e8148e0000		CALL github.com/nats-io/nats-server/v2/server.(*client).pubPermissionViolation(SB)		
+  client.go:4456	0x14054a74c		31c0			XORL AX, AX											
+  client.go:4456	0x14054a74e		bb01000000		MOVL $0x1, BX											
+  client.go:4456	0x14054a753		4881c408020000		ADDQ $0x208, SP											
+  client.go:4456	0x14054a75a		5d			POPQ BP												
+  client.go:4456	0x14054a75b		c3			RET												
+  client.go:4459	0x14054a75c		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4459	0x14054a764		e8d71cb5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4463	0x14054a769		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4463	0x14054a771		4883786800		CMPQ 0x68(AX), $0x0										
+  client.go:4463	0x14054a776		0f8583000000		JNE 0x14054a7ff											
+  client.go:4463	0x14054a77c		488b0d75390a02		MOVQ github.com/nats-io/nats-server/v2/server.clientNRGPrefix+8(SB), CX				
+  bytes.go:585		0x14054a783		48398878010000		CMPQ 0x178(AX), CX										
+  bytes.go:585		0x14054a78a		7d04			JGE 0x14054a790											
+  bytes.go:585		0x14054a78c		31c9			XORL CX, CX											
+  bytes.go:585		0x14054a78e		eb1f			JMP 0x14054a7af											
+  client.go:4463	0x14054a790		488b1d59390a02		MOVQ github.com/nats-io/nats-server/v2/server.clientNRGPrefix(SB), BX				
+  client.go:4463	0x14054a797		488b8070010000		MOVQ 0x170(AX), AX										
+  client.go:4463	0x14054a79e		6690			NOPW												
+  bytes.go:22		0x14054a7a0		e85b85abff		CALL runtime.memequal(SB)									
+  client.go:4463	0x14054a7a5		89c1			MOVL AX, CX											
+  client.go:4463	0x14054a7a7		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4463	0x14054a7af		84c9			TESTL CL, CL											
+  client.go:4463	0x14054a7b1		7442			JE 0x14054a7f5											
+  client.go:4463	0x14054a7b3		488b5070		MOVQ 0x70(AX), DX										
+  server.go:1842	0x14054a7b7		488b9298030000		MOVQ 0x398(DX), DX										
+  client.go:4463	0x14054a7be		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4463	0x14054a7c6		4839f2			CMPQ DX, SI											
+  client.go:4463	0x14054a7c9		743c			JE 0x14054a807											
+  client.go:4464	0x14054a7cb		488b9870010000		MOVQ 0x170(AX), BX										
+  client.go:4464	0x14054a7d2		488b8878010000		MOVQ 0x178(AX), CX										
+  client.go:4464	0x14054a7d9		488bb880010000		MOVQ 0x180(AX), DI										
+  client.go:4464	0x14054a7e0		e87b8d0000		CALL github.com/nats-io/nats-server/v2/server.(*client).pubPermissionViolation(SB)		
+  client.go:4465	0x14054a7e5		31c0			XORL AX, AX											
+  client.go:4465	0x14054a7e7		bb01000000		MOVL $0x1, BX											
+  client.go:4465	0x14054a7ec		4881c408020000		ADDQ $0x208, SP											
+  client.go:4465	0x14054a7f3		5d			POPQ BP												
+  client.go:4465	0x14054a7f4		c3			RET												
+  client.go:4487	0x14054a7f5		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4463	0x14054a7fd		eb08			JMP 0x14054a807											
+  client.go:4487	0x14054a7ff		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4469	0x14054a807		4883786800		CMPQ 0x68(AX), $0x0										
+  client.go:4469	0x14054a80c		756a			JNE 0x14054a878											
+  client.go:4469	0x14054a80e		488b98c0010000		MOVQ 0x1c0(AX), BX										
+  client.go:4469	0x14054a815		4885db			TESTQ BX, BX											
+  client.go:4469	0x14054a818		745e			JE 0x14054a878											
+  client.go:4469	0x14054a81a		488b90b8010000		MOVQ 0x1b8(AX), DX										
+  client.go:4469	0x14054a821		488b88c8010000		MOVQ 0x1c8(AX), CX										
+  client.go:4469	0x14054a828		4889d0			MOVQ DX, AX											
+  client.go:4469	0x14054a82b		e870faffff		CALL github.com/nats-io/nats-server/v2/server.isReservedReply(SB)				
+  client.go:4469	0x14054a830		84c0			TESTL AL, AL											
+  client.go:4469	0x14054a832		7512			JNE 0x14054a846											
+  client.go:4474	0x14054a834		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4487	0x14054a83c		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4469	0x14054a844		eb32			JMP 0x14054a878											
+  client.go:4470	0x14054a846		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4470	0x14054a84e		488b98b8010000		MOVQ 0x1b8(AX), BX										
+  client.go:4470	0x14054a855		488b88c0010000		MOVQ 0x1c0(AX), CX										
+  client.go:4470	0x14054a85c		488bb8c8010000		MOVQ 0x1c8(AX), DI										
+  client.go:4470	0x14054a863		e8b8910000		CALL github.com/nats-io/nats-server/v2/server.(*client).replySubjectViolation(SB)		
+  client.go:4471	0x14054a868		31c0			XORL AX, AX											
+  client.go:4471	0x14054a86a		bb01000000		MOVL $0x1, BX											
+  client.go:4471	0x14054a86f		4881c408020000		ADDQ $0x208, SP											
+  client.go:4471	0x14054a876		5d			POPQ BP												
+  client.go:4471	0x14054a877		c3			RET												
+  client.go:4474	0x14054a878		80b84913000000		CMPB 0x1349(AX), $0x0										
+  client.go:4474	0x14054a87f		90			NOPL												
+  client.go:4474	0x14054a880		7415			JE 0x14054a897											
+  client.go:4475	0x14054a882		e83965ffff		CALL github.com/nats-io/nats-server/v2/server.(*client).sendOK(SB)				
+  mqtt.go:773		0x14054a887		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4487	0x14054a88f		488bb42448010000	MOVQ 0x148(SP), SI										
+  mqtt.go:773		0x14054a897		4883b8881a000000	CMPQ 0x1a88(AX), $0x0										
+  mqtt.go:773		0x14054a89f		90			NOPL												
+  client.go:4479	0x14054a8a0		7415			JE 0x14054a8b7											
+  client.go:4480	0x14054a8a2		e8d9911d00		CALL github.com/nats-io/nats-server/v2/server.(*client).mqttHandlePubRetain(SB)			
+  client.go:4486	0x14054a8a7		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4487	0x14054a8af		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4486	0x14054a8b7		4883786800		CMPQ 0x68(AX), $0x0										
+  client.go:4486	0x14054a8bc		0f1f4000		NOPL 0(AX)											
+  client.go:4486	0x14054a8c0		0f8446010000		JE 0x14054aa0c											
+  client.go:4487	0x14054a8c6		8b9668010000		MOVL 0x168(SI), DX										
+  client.go:4487	0x14054a8cc		85d2			TESTL DX, DX											
+  client.go:4487	0x14054a8ce		0f8e31010000		JLE 0x14054aa05											
+  client.go:4488	0x14054a8d4		90			NOPL												
+  type.go:94		0x14054a8d5		ba01000000		MOVL $0x1, DX											
+  type.go:94		0x14054a8da		f00fc196e0010000	LOCK XADDL DX, 0x1e0(SI)									
+  type.go:94		0x14054a8e2		ffc2			INCL DX												
+  rwmutex.go:72		0x14054a8e4		85d2			TESTL DX, DX											
+  rwmutex.go:72		0x14054a8e6		7d20			JGE 0x14054a908											
+  rwmutex.go:74		0x14054a8e8		488d86dc010000		LEAQ 0x1dc(SI), AX										
+  rwmutex.go:74		0x14054a8ef		31db			XORL BX, BX											
+  rwmutex.go:74		0x14054a8f1		31c9			XORL CX, CX											
+  rwmutex.go:74		0x14054a8f3		e8c807b4ff		CALL sync.runtime_SemacquireRWMutexR(SB)							
+  client.go:4489	0x14054a8f8		488b842418020000	MOVQ 0x218(SP), AX										
+  gateway.go:276	0x14054a900		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4489	0x14054a908		488b8870010000		MOVQ 0x170(AX), CX										
+  client.go:4489	0x14054a90f		48898c24f0000000	MOVQ CX, 0xf0(SP)										
+  client.go:4489	0x14054a917		488bb878010000		MOVQ 0x178(AX), DI										
+  client.go:4489	0x14054a91e		4889bc2490000000	MOVQ DI, 0x90(SP)										
+  gateway.go:276	0x14054a926		488b9e70010000		MOVQ 0x170(SI), BX										
+  client.go:4489	0x14054a92d		488b9080010000		MOVQ 0x180(AX), DX										
+  client.go:4489	0x14054a934		48899424a0000000	MOVQ DX, 0xa0(SP)										
+  gateway.go:276	0x14054a93c		488d05f59ee801		LEAQ type:*+667520(SB), AX									
+  gateway.go:276	0x14054a943		e878f7abff		CALL runtime.mapaccess2_faststr(SB)								
+  gateway.go:276	0x14054a948		889c2486000000		MOVB BL, 0x86(SP)										
+  gateway.go:276	0x14054a94f		84db			TESTL BL, BL											
+  gateway.go:277	0x14054a951		751a			JNE 0x14054a96d											
+  client.go:4489	0x14054a953		488b8c24a0000000	MOVQ 0xa0(SP), CX										
+  client.go:4489	0x14054a95b		488b9c2490000000	MOVQ 0x90(SP), BX										
+  client.go:4489	0x14054a963		488b8424f0000000	MOVQ 0xf0(SP), AX										
+  client.go:4489	0x14054a96b		eb11			JMP 0x14054a97e											
+  gateway.go:276	0x14054a96d		488b10			MOVQ 0(AX), DX											
+  gateway.go:280	0x14054a970		488b1a			MOVQ 0(DX), BX											
+  gateway.go:280	0x14054a973		488b4a08		MOVQ 0x8(DX), CX										
+  gateway.go:280	0x14054a977		31c0			XORL AX, AX											
+  gateway.go:280	0x14054a979		e88206b2ff		CALL runtime.stringtoslicebyte(SB)								
+  client.go:4489	0x14054a97e		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4489	0x14054a986		48899a78010000		MOVQ BX, 0x178(DX)										
+  client.go:4489	0x14054a98d		48898a80010000		MOVQ CX, 0x180(DX)										
+  client.go:4489	0x14054a994		833d15b3120200		CMPL runtime.writeBarrier(SB), $0x0								
+  client.go:4489	0x14054a99b		7413			JE 0x14054a9b0											
+  client.go:4489	0x14054a99d		488bb270010000		MOVQ 0x170(DX), SI										
+  client.go:4489	0x14054a9a4		e83766b4ff		CALL runtime.gcWriteBarrier2(SB)								
+  client.go:4489	0x14054a9a9		498903			MOVQ AX, 0(R11)											
+  client.go:4489	0x14054a9ac		49897308		MOVQ SI, 0x8(R11)										
+  client.go:4489	0x14054a9b0		48898270010000		MOVQ AX, 0x170(DX)										
+  type.go:94		0x14054a9b7		bbffffffff		MOVL $-0x1, BX											
+  type.go:94		0x14054a9bc		488b842448010000	MOVQ 0x148(SP), AX										
+  type.go:94		0x14054a9c4		f00fc198e0010000	LOCK XADDL BX, 0x1e0(AX)									
+  type.go:94		0x14054a9cc		ffcb			DECL BX												
+  rwmutex.go:120	0x14054a9ce		85db			TESTL BX, BX											
+  rwmutex.go:120	0x14054a9d0		7d1b			JGE 0x14054a9ed											
+  client.go:4490	0x14054a9d2		4805d0010000		ADDQ $0x1d0, AX											
+  rwmutex.go:122	0x14054a9d8		e8a318b5ff		CALL sync.(*RWMutex).rUnlockSlow(SB)								
+  client.go:4555	0x14054a9dd		488b842448010000	MOVQ 0x148(SP), AX										
+  client.go:4500	0x14054a9e5		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4500	0x14054a9ed		4889d0			MOVQ DX, AX											
+  client.go:4555	0x14054a9f0		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4555	0x14054a9f8		0fb68c2486000000	MOVZX 0x86(SP), CX										
+  client.go:4490	0x14054aa00		e9fe000000		JMP 0x14054ab03											
+  client.go:4490	0x14054aa05		31c9			XORL CX, CX											
+  client.go:4487	0x14054aa07		e9f7000000		JMP 0x14054ab03											
+  client.go:4492	0x14054aa0c		8b5058			MOVL 0x58(AX), DX										
+  client.go:4492	0x14054aa0f		85d2			TESTL DX, DX											
+  client.go:4492	0x14054aa11		7f07			JG 0x14054aa1a											
+  client.go:4492	0x14054aa13		31c9			XORL CX, CX											
+  client.go:4492	0x14054aa15		e9e9000000		JMP 0x14054ab03											
+  client.go:4493	0x14054aa1a		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4493	0x14054aa22		e8d918b5ff		CALL sync.(*RWMutex).Lock(SB)									
+  client.go:4494	0x14054aa27		488b8c2418020000	MOVQ 0x218(SP), CX										
+  client.go:4494	0x14054aa2f		488b9170010000		MOVQ 0x170(CX), DX										
+  client.go:4494	0x14054aa36		48899424e8000000	MOVQ DX, 0xe8(SP)										
+  client.go:4494	0x14054aa3e		488bb978010000		MOVQ 0x178(CX), DI										
+  client.go:4494	0x14054aa45		4889bc2488000000	MOVQ DI, 0x88(SP)										
+  gateway.go:276	0x14054aa4d		488b5960		MOVQ 0x60(CX), BX										
+  client.go:4494	0x14054aa51		488b8980010000		MOVQ 0x180(CX), CX										
+  client.go:4494	0x14054aa58		48898c2498000000	MOVQ CX, 0x98(SP)										
+  gateway.go:276	0x14054aa60		488d05d19de801		LEAQ type:*+667520(SB), AX									
+  gateway.go:276	0x14054aa67		4889d1			MOVQ DX, CX											
+  gateway.go:276	0x14054aa6a		e851f6abff		CALL runtime.mapaccess2_faststr(SB)								
+  gateway.go:276	0x14054aa6f		889c2486000000		MOVB BL, 0x86(SP)										
+  gateway.go:276	0x14054aa76		84db			TESTL BL, BL											
+  gateway.go:277	0x14054aa78		751a			JNE 0x14054aa94											
+  client.go:4494	0x14054aa7a		488b8c2498000000	MOVQ 0x98(SP), CX										
+  client.go:4494	0x14054aa82		488b9c2488000000	MOVQ 0x88(SP), BX										
+  client.go:4494	0x14054aa8a		488b8424e8000000	MOVQ 0xe8(SP), AX										
+  client.go:4494	0x14054aa92		eb11			JMP 0x14054aaa5											
+  gateway.go:276	0x14054aa94		488b10			MOVQ 0(AX), DX											
+  gateway.go:280	0x14054aa97		488b1a			MOVQ 0(DX), BX											
+  gateway.go:280	0x14054aa9a		488b4a08		MOVQ 0x8(DX), CX										
+  gateway.go:280	0x14054aa9e		31c0			XORL AX, AX											
+  gateway.go:280	0x14054aaa0		e85b05b2ff		CALL runtime.stringtoslicebyte(SB)								
+  client.go:4494	0x14054aaa5		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4494	0x14054aaad		48899a78010000		MOVQ BX, 0x178(DX)										
+  client.go:4494	0x14054aab4		48898a80010000		MOVQ CX, 0x180(DX)										
+  client.go:4494	0x14054aabb		833deeb1120200		CMPL runtime.writeBarrier(SB), $0x0								
+  client.go:4494	0x14054aac2		7413			JE 0x14054aad7											
+  client.go:4494	0x14054aac4		488b8a70010000		MOVQ 0x170(DX), CX										
+  client.go:4494	0x14054aacb		e81065b4ff		CALL runtime.gcWriteBarrier2(SB)								
+  client.go:4494	0x14054aad0		498903			MOVQ AX, 0(R11)											
+  client.go:4494	0x14054aad3		49894b08		MOVQ CX, 0x8(R11)										
+  client.go:4494	0x14054aad7		48898270010000		MOVQ AX, 0x170(DX)										
+  client.go:4495	0x14054aade		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4495	0x14054aae6		e85519b5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4500	0x14054aaeb		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4555	0x14054aaf3		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4555	0x14054aafb		0fb68c2486000000	MOVZX 0x86(SP), CX										
+  client.go:4500	0x14054ab03		4883b83014000000	CMPQ 0x1430(AX), $0x0										
+  client.go:4500	0x14054ab0b		0f84f5010000		JE 0x14054ad06											
+  client.go:4500	0x14054ab11		888c2486000000		MOVB CL, 0x86(SP)										
+  client.go:4501	0x14054ab18		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4501	0x14054ab20		e8db17b5ff		CALL sync.(*RWMutex).Lock(SB)									
+  client.go:4502	0x14054ab25		488b8c2418020000	MOVQ 0x218(SP), CX										
+  client.go:4502	0x14054ab2d		488b9130140000		MOVQ 0x1430(CX), DX										
+  client.go:4502	0x14054ab34		488b1a			MOVQ 0(DX), BX											
+  client.go:4502	0x14054ab37		488b9170010000		MOVQ 0x170(CX), DX										
+  client.go:4502	0x14054ab3e		488bb978010000		MOVQ 0x178(CX), DI										
+  client.go:4502	0x14054ab45		488d0544abe801		LEAQ type:*+671192(SB), AX									
+  client.go:4502	0x14054ab4c		4889d1			MOVQ DX, CX											
+  client.go:4502	0x14054ab4f		e80cf5abff		CALL runtime.mapaccess1_faststr(SB)								
+  client.go:4502	0x14054ab54		488b08			MOVQ 0(AX), CX											
+  client.go:4502	0x14054ab57		48898c2410010000	MOVQ CX, 0x110(SP)										
+  client.go:4502	0x14054ab5f		90			NOPL												
+  client.go:4503	0x14054ab60		4885c9			TESTQ CX, CX											
+  client.go:4503	0x14054ab63		744c			JE 0x14054abb1											
+  client.go:4504	0x14054ab65		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4504	0x14054ab6d		488bba78010000		MOVQ 0x178(DX), DI										
+  store.go:851		0x14054ab74		4885ff			TESTQ DI, DI											
+  store.go:851		0x14054ab77		7509			JNE 0x14054ab82											
+  store.go:851		0x14054ab79		31ff			XORL DI, DI											
+  store.go:851		0x14054ab7b		4531c0			XORL R8, R8											
+  store.go:851		0x14054ab7e		6690			NOPW												
+  client.go:4504	0x14054ab80		eb16			JMP 0x14054ab98											
+  client.go:4504	0x14054ab82		488bb270010000		MOVQ 0x170(DX), SI										
+  store.go:855		0x14054ab89		4989f0			MOVQ SI, R8											
+  store.go:855		0x14054ab8c		48f7de			NEGQ SI												
+  store.go:855		0x14054ab8f		4839f7			CMPQ DI, SI											
+  store.go:855		0x14054ab92		0f870d0a0000		JA 0x14054b5a5											
+  client.go:4504	0x14054ab98		488b9230140000		MOVQ 0x1430(DX), DX										
+  client.go:4504	0x14054ab9f		488b1a			MOVQ 0(DX), BX											
+  client.go:4504	0x14054aba2		488d05e7aae801		LEAQ type:*+671192(SB), AX									
+  client.go:4504	0x14054aba9		4c89c1			MOVQ R8, CX											
+  client.go:4504	0x14054abac		e82ffdabff		CALL runtime.mapdelete_faststr(SB)								
+  client.go:4506	0x14054abb1		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4506	0x14054abb9		e88218b5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4503	0x14054abbe		488b8c2410010000	MOVQ 0x110(SP), CX										
+  client.go:4503	0x14054abc6		4885c9			TESTQ CX, CX											
+  client.go:4508	0x14054abc9		0f841f010000		JE 0x14054acee											
+  client.go:4511	0x14054abcf		48c74158c8000000	MOVQ $0xc8, 0x58(CX)										
+  client.go:4512	0x14054abd7		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4512	0x14054abdf		bb01000000		MOVL $0x1, BX											
+  client.go:4512	0x14054abe4		e817c60000		CALL github.com/nats-io/nats-server/v2/server.(*client).getClientInfo(SB)			
+  client.go:4512	0x14054abe9		833dc0b0120200		CMPL runtime.writeBarrier(SB), $0x0								
+  client.go:4512	0x14054abf0		750a			JNE 0x14054abfc											
+  client.go:4512	0x14054abf2		488b942410010000	MOVQ 0x110(SP), DX										
+  client.go:4512	0x14054abfa		eb18			JMP 0x14054ac14											
+  client.go:4512	0x14054abfc		488b942410010000	MOVQ 0x110(SP), DX										
+  client.go:4512	0x14054ac04		488b7278		MOVQ 0x78(DX), SI										
+  client.go:4512	0x14054ac08		e8d363b4ff		CALL runtime.gcWriteBarrier2(SB)								
+  client.go:4512	0x14054ac0d		498903			MOVQ AX, 0(R11)											
+  client.go:4512	0x14054ac10		49897308		MOVQ SI, 0x8(R11)										
+  client.go:4512	0x14054ac14		48894278		MOVQ AX, 0x78(DX)										
+  client.go:4513	0x14054ac18		488b9a90000000		MOVQ 0x90(DX), BX										
+  client.go:4513	0x14054ac1f		488b8a98000000		MOVQ 0x98(DX), CX										
+  client.go:4513	0x14054ac26		488b8288000000		MOVQ 0x88(DX), AX										
+  client.go:4513	0x14054ac2d		e8ee0cb7ff		CALL time.Since(SB)										
+  client.go:4513	0x14054ac32		488b942410010000	MOVQ 0x110(SP), DX										
+  client.go:4513	0x14054ac3a		488b7278		MOVQ 0x78(DX), SI										
+  client.go:4513	0x14054ac3e		482b8680000000		SUBQ 0x80(SI), AX										
+  client.go:4513	0x14054ac45		488982a0000000		MOVQ AX, 0xa0(DX)										
+  client.go:4514	0x14054ac4c		488bb680000000		MOVQ 0x80(SI), SI										
+  client.go:4514	0x14054ac53		4801c6			ADDQ AX, SI											
+  client.go:4514	0x14054ac56		4889b2b0000000		MOVQ SI, 0xb0(DX)										
+  client.go:4515	0x14054ac5d		90			NOPL												
+  client.go:4515	0x14054ac5e		6690			NOPW												
+  accounts.go:1486	0x14054ac60		4885c0			TESTQ AX, AX											
+  accounts.go:1486	0x14054ac63		7d0b			JGE 0x14054ac70											
+  accounts.go:1487	0x14054ac65		48c782a000000000000000	MOVQ $0x0, 0xa0(DX)										
+  accounts.go:1489	0x14054ac70		4883baa800000000	CMPQ 0xa8(DX), $0x0										
+  accounts.go:1489	0x14054ac78		7d0b			JGE 0x14054ac85											
+  accounts.go:1490	0x14054ac7a		48c782a800000000000000	MOVQ $0x0, 0xa8(DX)										
+  client.go:4516	0x14054ac85		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4516	0x14054ac8d		488b8270010000		MOVQ 0x170(DX), AX										
+  client.go:4516	0x14054ac94		488b9a78010000		MOVQ 0x178(DX), BX										
+  client.go:4516	0x14054ac9b		488b8a80010000		MOVQ 0x180(DX), CX										
+  client.go:4516	0x14054aca2		e8d9da0400		CALL github.com/nats-io/nats-server/v2/server.remoteLatencySubjectForResponse(SB)		
+  client.go:4517	0x14054aca7		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4517	0x14054acaf		488b5270		MOVQ 0x70(DX), DX										
+  events.go:709		0x14054acb3		488d35d63fe401		LEAQ type:*+381912(SB), SI									
+  events.go:709		0x14054acba		48893424		MOVQ SI, 0(SP)											
+  events.go:709		0x14054acbe		488bb42410010000	MOVQ 0x110(SP), SI										
+  events.go:709		0x14054acc6		4889742408		MOVQ SI, 0x8(SP)										
+  events.go:709		0x14054accb		c644241000		MOVB $0x0, 0x10(SP)										
+  events.go:709		0x14054acd0		4889c1			MOVQ AX, CX											
+  events.go:709		0x14054acd3		4889df			MOVQ BX, DI											
+  events.go:709		0x14054acd6		31f6			XORL SI, SI											
+  events.go:709		0x14054acd8		4531c0			XORL R8, R8											
+  events.go:709		0x14054acdb		4189f1			MOVL SI, R9											
+  events.go:709		0x14054acde		4589c2			MOVL R8, R10											
+  events.go:709		0x14054ace1		4589c3			MOVL R8, R11											
+  events.go:709		0x14054ace4		4889d0			MOVQ DX, AX											
+  events.go:709		0x14054ace7		31db			XORL BX, BX											
+  events.go:709		0x14054ace9		e812ff0300		CALL github.com/nats-io/nats-server/v2/server.(*Server).sendInternalAccountMsgWithReply(SB)	
+  client.go:4534	0x14054acee		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4500	0x14054acf6		0fb68c2486000000	MOVZX 0x86(SP), CX										
+  client.go:4555	0x14054acfe		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4500	0x14054ad06		84c9			TESTL CL, CL											
+  client.go:4523	0x14054ad08		0f85db010000		JNE 0x14054aee9											
+  client.go:4534	0x14054ad0e		4883786800		CMPQ 0x68(AX), $0x0										
+  client.go:4534	0x14054ad13		7563			JNE 0x14054ad78											
+  client.go:4535	0x14054ad15		488b5070		MOVQ 0x70(AX), DX										
+  client.go:4535	0x14054ad19		4889942408010000	MOVQ DX, 0x108(SP)										
+  client.go:4535	0x14054ad21		488b9870010000		MOVQ 0x170(AX), BX										
+  client.go:4535	0x14054ad28		488b8878010000		MOVQ 0x178(AX), CX										
+  client.go:4535	0x14054ad2f		31c0			XORL AX, AX											
+  client.go:4535	0x14054ad31		e80a01b2ff		CALL runtime.slicebytetostring(SB)								
+  pubstats.go:383	0x14054ad36		488b942408010000	MOVQ 0x108(SP), DX										
+  pubstats.go:383	0x14054ad3e		488b92a8030000		MOVQ 0x3a8(DX), DX										
+  pubstats.go:383	0x14054ad45		4885d2			TESTQ DX, DX											
+  pubstats.go:383	0x14054ad48		741e			JE 0x14054ad68											
+  pubstats.go:384	0x14054ad4a		4889c1			MOVQ AX, CX											
+  pubstats.go:384	0x14054ad4d		4889df			MOVQ BX, DI											
+  pubstats.go:384	0x14054ad50		488bb424e0000000	MOVQ 0xe0(SP), SI										
+  pubstats.go:384	0x14054ad58		4889d0			MOVQ DX, AX											
+  pubstats.go:384	0x14054ad5b		488b9c2448010000	MOVQ 0x148(SP), BX										
+  pubstats.go:384	0x14054ad63		e8f89b2300		CALL github.com/nats-io/nats-server/v2/server.(*pubStatsMgr).record(SB)				
+  client.go:4544	0x14054ad68		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4555	0x14054ad70		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4543	0x14054ad78		488b942440010000	MOVQ 0x140(SP), DX										
+  client.go:4543	0x14054ad80		488b5218		MOVQ 0x18(DX), DX										
+  client.go:4543	0x14054ad84		48899424d8000000	MOVQ DX, 0xd8(SP)										
+  client.go:4544	0x14054ad8c		4c8b8088000000		MOVQ 0x88(AX), R8										
+  client.go:4544	0x14054ad93		4c39c2			CMPQ DX, R8											
+  client.go:4544	0x14054ad96		7534			JNE 0x14054adcc											
+  client.go:4544	0x14054ad98		488b9890000000		MOVQ 0x90(AX), BX										
+  client.go:4544	0x14054ad9f		90			NOPL												
+  client.go:4544	0x14054ada0		4885db			TESTQ BX, BX											
+  client.go:4544	0x14054ada3		7427			JE 0x14054adcc											
+  client.go:4545	0x14054ada5		488b8870010000		MOVQ 0x170(AX), CX										
+  client.go:4545	0x14054adac		488bb878010000		MOVQ 0x178(AX), DI										
+  client.go:4545	0x14054adb3		488d050e93e801		LEAQ type:*+665616(SB), AX									
+  client.go:4545	0x14054adba		e801f3abff		CALL runtime.mapaccess2_faststr(SB)								
+  client.go:4545	0x14054adbf		488b08			MOVQ 0(AX), CX											
+  client.go:4593	0x14054adc2		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4545	0x14054adca		eb54			JMP 0x14054ae20											
+  client.go:4548	0x14054adcc		e80fc7b3ff		CALL runtime.makemap_small(SB)									
+  client.go:4548	0x14054add1		833dd8ae120200		CMPL runtime.writeBarrier(SB), $0x0								
+  client.go:4548	0x14054add8		750a			JNE 0x14054ade4											
+  client.go:4548	0x14054adda		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4548	0x14054ade2		eb1b			JMP 0x14054adff											
+  client.go:4548	0x14054ade4		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4548	0x14054adec		4c8ba290000000		MOVQ 0x90(DX), R12										
+  client.go:4548	0x14054adf3		e8e861b4ff		CALL runtime.gcWriteBarrier2(SB)								
+  client.go:4548	0x14054adf8		498903			MOVQ AX, 0(R11)											
+  client.go:4548	0x14054adfb		4d896308		MOVQ R12, 0x8(R11)										
+  client.go:4548	0x14054adff		48898290000000		MOVQ AX, 0x90(DX)										
+  client.go:4549	0x14054ae06		4c8ba424d8000000	MOVQ 0xd8(SP), R12										
+  client.go:4549	0x14054ae0e		4c89a288000000		MOVQ R12, 0x88(DX)										
+  client.go:4549	0x14054ae15		31db			XORL BX, BX											
+  client.go:4549	0x14054ae17		31c9			XORL CX, CX											
+  client.go:4549	0x14054ae19		0f1f8000000000		NOPL 0(AX)											
+  client.go:4553	0x14054ae20		84db			TESTL BL, BL											
+  client.go:4553	0x14054ae22		0f85f2010000		JNE 0x14054b01a											
+  client.go:4555	0x14054ae28		488bb42448010000	MOVQ 0x148(SP), SI										
+  client.go:4555	0x14054ae30		488bb6f8010000		MOVQ 0x1f8(SI), SI										
+  client.go:4555	0x14054ae37		4889b42400010000	MOVQ SI, 0x100(SP)										
+  client.go:4555	0x14054ae3f		488b9a70010000		MOVQ 0x170(DX), BX										
+  client.go:4555	0x14054ae46		488b8a78010000		MOVQ 0x178(DX), CX										
+  client.go:4555	0x14054ae4d		31c0			XORL AX, AX											
+  client.go:4555	0x14054ae4f		e8ecffb1ff		CALL runtime.slicebytetostring(SB)								
+  sublist.go:538	0x14054ae54		4889d9			MOVQ BX, CX											
+  sublist.go:538	0x14054ae57		bf01000000		MOVL $0x1, DI											
+  sublist.go:538	0x14054ae5c		31f6			XORL SI, SI											
+  sublist.go:538	0x14054ae5e		4889c3			MOVQ AX, BX											
+  sublist.go:538	0x14054ae61		488b842400010000	MOVQ 0x100(SP), AX										
+  sublist.go:538	0x14054ae69		e812f42e00		CALL github.com/nats-io/nats-server/v2/server.(*Sublist).match(SB)				
+  client.go:4556	0x14054ae6e		488b5020		MOVQ 0x20(AX), DX										
+  client.go:4556	0x14054ae72		48035008		ADDQ 0x8(AX), DX										
+  client.go:4556	0x14054ae76		4885d2			TESTQ DX, DX											
+  client.go:4556	0x14054ae79		0f8e90010000		JLE 0x14054b00f											
+  client.go:4558	0x14054ae7f		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4558	0x14054ae87		488b9a90000000		MOVQ 0x90(DX), BX										
+  client.go:4558	0x14054ae8e		4885db			TESTQ BX, BX											
+  client.go:4558	0x14054ae91		7405			JE 0x14054ae98											
+  client.go:4558	0x14054ae93		488b33			MOVQ 0(BX), SI											
+  client.go:4558	0x14054ae96		eb02			JMP 0x14054ae9a											
+  client.go:4558	0x14054ae98		31f6			XORL SI, SI											
+  sublist.go:538	0x14054ae9a		4889842420010000	MOVQ AX, 0x120(SP)										
+  client.go:4558	0x14054aea2		4881fe00020000		CMPQ SI, $0x200											
+  client.go:4558	0x14054aea9		0f8cf0000000		JL 0x14054af9f											
+  client.go:4560	0x14054aeaf		488d8c24a8010000	LEAQ 0x1a8(SP), CX										
+  client.go:4560	0x14054aeb7		440f1139		MOVUPS X15, 0(CX)										
+  client.go:4560	0x14054aebb		440f117910		MOVUPS X15, 0x10(CX)										
+  client.go:4560	0x14054aec0		440f117920		MOVUPS X15, 0x20(CX)										
+  client.go:4560	0x14054aec5		440f117930		MOVUPS X15, 0x30(CX)										
+  client.go:4560	0x14054aeca		440f117940		MOVUPS X15, 0x40(CX)										
+  client.go:4560	0x14054aecf		440f117950		MOVUPS X15, 0x50(CX)										
+  client.go:4560	0x14054aed4		488d05ed91e801		LEAQ type:*+665616(SB), AX									
+  client.go:4560	0x14054aedb		0f1f440000		NOPL 0(AX)(AX*1)										
+  client.go:4560	0x14054aee0		e81b77adff		CALL runtime.mapIterStart(SB)									
+  client.go:4560	0x14054aee5		31c0			XORL AX, AX											
+  client.go:4560	0x14054aee7		eb66			JMP 0x14054af4f											
+  client.go:4524	0x14054aee9		488b9c2420020000	MOVQ 0x220(SP), BX										
+  client.go:4524	0x14054aef1		488b8c2428020000	MOVQ 0x228(SP), CX										
+  client.go:4524	0x14054aef9		488bbc2430020000	MOVQ 0x230(SP), DI										
+  client.go:4524	0x14054af01		e8da070000		CALL github.com/nats-io/nats-server/v2/server.(*client).handleGWReplyMap(SB)			
+  client.go:4525	0x14054af06		b801000000		MOVL $0x1, AX											
+  client.go:4525	0x14054af0b		31db			XORL BX, BX											
+  client.go:4525	0x14054af0d		4881c408020000		ADDQ $0x208, SP											
+  client.go:4525	0x14054af14		5d			POPQ BP												
+  client.go:4525	0x14054af15		c3			RET												
+  client.go:4445	0x14054af16		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4445	0x14054af1e		6690			NOPW												
+  client.go:4445	0x14054af20		e81b15b5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4446	0x14054af25		31c0			XORL AX, AX											
+  client.go:4446	0x14054af27		89c3			MOVL AX, BX											
+  client.go:4446	0x14054af29		4881c408020000		ADDQ $0x208, SP											
+  client.go:4446	0x14054af30		5d			POPQ BP												
+  client.go:4446	0x14054af31		c3			RET												
+  client.go:4562	0x14054af32		48899424c8000000	MOVQ DX, 0xc8(SP)										
+  client.go:4560	0x14054af3a		488d8424a8010000	LEAQ 0x1a8(SP), AX										
+  client.go:4560	0x14054af42		e81977adff		CALL runtime.mapIterNext(SB)									
+  client.go:4560	0x14054af47		488b8424c8000000	MOVQ 0xc8(SP), AX										
+  client.go:4560	0x14054af4f		488b9424a8010000	MOVQ 0x1a8(SP), DX										
+  client.go:4560	0x14054af57		4885d2			TESTQ DX, DX											
+  client.go:4560	0x14054af5a		743b			JE 0x14054af97											
+  client.go:4560	0x14054af5c		48898424c8000000	MOVQ AX, 0xc8(SP)										
+  client.go:4560	0x14054af64		488b0a			MOVQ 0(DX), CX											
+  client.go:4560	0x14054af67		488b7a08		MOVQ 0x8(DX), DI										
+  client.go:4561	0x14054af6b		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4561	0x14054af73		488b9a90000000		MOVQ 0x90(DX), BX										
+  client.go:4561	0x14054af7a		488d054791e801		LEAQ type:*+665616(SB), AX									
+  client.go:4561	0x14054af81		e85af9abff		CALL runtime.mapdelete_faststr(SB)								
+  client.go:4562	0x14054af86		488b9424c8000000	MOVQ 0xc8(SP), DX										
+  client.go:4562	0x14054af8e		48ffc2			INCQ DX												
+  client.go:4562	0x14054af91		4883fa20		CMPQ DX, $0x20											
+  client.go:4562	0x14054af95		7e9b			JLE 0x14054af32											
+  client.go:4568	0x14054af97		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4568	0x14054af9f		488bb290000000		MOVQ 0x90(DX), SI										
+  client.go:4568	0x14054afa6		4889b42438010000	MOVQ SI, 0x138(SP)										
+  client.go:4568	0x14054afae		488b9a70010000		MOVQ 0x170(DX), BX										
+  client.go:4568	0x14054afb5		488b8a78010000		MOVQ 0x178(DX), CX										
+  client.go:4568	0x14054afbc		31c0			XORL AX, AX											
+  client.go:4568	0x14054afbe		6690			NOPW												
+  client.go:4568	0x14054afc0		e87bfeb1ff		CALL runtime.slicebytetostring(SB)								
+  client.go:4568	0x14054afc5		4889c1			MOVQ AX, CX											
+  client.go:4568	0x14054afc8		4889df			MOVQ BX, DI											
+  client.go:4568	0x14054afcb		488d05f690e801		LEAQ type:*+665616(SB), AX									
+  client.go:4568	0x14054afd2		488b9c2438010000	MOVQ 0x138(SP), BX										
+  client.go:4568	0x14054afda		e881f3abff		CALL runtime.mapassign_faststr(SB)								
+  client.go:4568	0x14054afdf		833dcaac120200		CMPL runtime.writeBarrier(SB), $0x0								
+  client.go:4568	0x14054afe6		750a			JNE 0x14054aff2											
+  client.go:4568	0x14054afe8		488b8c2420010000	MOVQ 0x120(SP), CX										
+  client.go:4568	0x14054aff0		eb17			JMP 0x14054b009											
+  client.go:4568	0x14054aff2		488b10			MOVQ 0(AX), DX											
+  client.go:4568	0x14054aff5		e8e65fb4ff		CALL runtime.gcWriteBarrier2(SB)								
+  client.go:4568	0x14054affa		488b8c2420010000	MOVQ 0x120(SP), CX										
+  client.go:4568	0x14054b002		49890b			MOVQ CX, 0(R11)											
+  client.go:4568	0x14054b005		49895308		MOVQ DX, 0x8(R11)										
+  client.go:4568	0x14054b009		488908			MOVQ CX, 0(AX)											
+  client.go:4573	0x14054b00c		4889c8			MOVQ CX, AX											
+  client.go:4593	0x14054b00f		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4573	0x14054b017		4889c1			MOVQ AX, CX											
+  client.go:4578	0x14054b01a		4c8b6108		MOVQ 0x8(CX), R12										
+  client.go:4578	0x14054b01e		4c8b6920		MOVQ 0x20(CX), R13										
+  client.go:4578	0x14054b022		4d01ec			ADDQ R13, R12											
+  client.go:4578	0x14054b025		4d85e4			TESTQ R12, R12											
+  client.go:4578	0x14054b028		7f0d			JG 0x14054b037											
+  client.go:4578	0x14054b02a		31c0			XORL AX, AX											
+  client.go:4578	0x14054b02c		31ff			XORL DI, DI											
+  client.go:4578	0x14054b02e		31c9			XORL CX, CX											
+  client.go:4578	0x14054b030		31db			XORL BX, BX											
+  client.go:4578	0x14054b032		e9c6000000		JMP 0x14054b0fd											
+  client.go:4585	0x14054b037		4d85ed			TESTQ R13, R13											
+  client.go:4585	0x14054b03a		742e			JE 0x14054b06a											
+  client.go:4585	0x14054b03c		4c8b6270		MOVQ 0x70(DX), R12										
+  client.go:4585	0x14054b040		4d8ba424600b0000	MOVQ 0xb60(R12), R12										
+  client.go:4585	0x14054b048		41807c242000		CMPB 0x20(R12), $0x0										
+  client.go:4585	0x14054b04e		7416			JE 0x14054b066											
+  client.go:4586	0x14054b050		4d8b2424		MOVQ 0(R12), R12										
+  client.go:4586	0x14054b054		4d85e4			TESTQ R12, R12											
+  client.go:4586	0x14054b057		7e09			JLE 0x14054b062											
+  client.go:4586	0x14054b059		b801000000		MOVL $0x1, AX											
+  client.go:4586	0x14054b05e		6690			NOPW												
+  client.go:4587	0x14054b060		eb0a			JMP 0x14054b06c											
+  client.go:4587	0x14054b062		31c0			XORL AX, AX											
+  client.go:4586	0x14054b064		eb06			JMP 0x14054b06c											
+  client.go:4586	0x14054b066		31c0			XORL AX, AX											
+  client.go:4585	0x14054b068		eb02			JMP 0x14054b06c											
+  client.go:4585	0x14054b06a		31c0			XORL AX, AX											
+  client.go:4589	0x14054b06c		4c8b8a88010000		MOVQ 0x188(DX), R9										
+  client.go:4589	0x14054b073		4c8b9290010000		MOVQ 0x190(DX), R10										
+  client.go:4589	0x14054b07a		4c8b9a98010000		MOVQ 0x198(DX), R11										
+  client.go:4589	0x14054b081		4c8ba270010000		MOVQ 0x170(DX), R12										
+  client.go:4589	0x14054b088		4c8baa78010000		MOVQ 0x178(DX), R13										
+  client.go:4589	0x14054b08f		4c8bba80010000		MOVQ 0x180(DX), R15										
+  client.go:4589	0x14054b096		488b9ab8010000		MOVQ 0x1b8(DX), BX										
+  client.go:4589	0x14054b09d		488bb2c0010000		MOVQ 0x1c0(DX), SI										
+  client.go:4589	0x14054b0a4		488bbac8010000		MOVQ 0x1c8(DX), DI										
+  client.go:4589	0x14054b0ab		4c892424		MOVQ R12, 0(SP)											
+  client.go:4589	0x14054b0af		4c896c2408		MOVQ R13, 0x8(SP)										
+  client.go:4589	0x14054b0b4		4c897c2410		MOVQ R15, 0x10(SP)										
+  client.go:4589	0x14054b0b9		48895c2418		MOVQ BX, 0x18(SP)										
+  client.go:4589	0x14054b0be		4889742420		MOVQ SI, 0x20(SP)										
+  client.go:4589	0x14054b0c3		48897c2428		MOVQ DI, 0x28(SP)										
+  client.go:4589	0x14054b0c8		4889442430		MOVQ AX, 0x30(SP)										
+  client.go:4589	0x14054b0cd		4889d0			MOVQ DX, AX											
+  client.go:4589	0x14054b0d0		488b9c2448010000	MOVQ 0x148(SP), BX										
+  client.go:4589	0x14054b0d8		488bbc2420020000	MOVQ 0x220(SP), DI										
+  client.go:4589	0x14054b0e0		488bb42428020000	MOVQ 0x228(SP), SI										
+  client.go:4589	0x14054b0e8		4c8b842430020000	MOVQ 0x230(SP), R8										
+  client.go:4589	0x14054b0f0		e88b500000		CALL github.com/nats-io/nats-server/v2/server.(*client).processMsgResults(SB)			
+  client.go:4593	0x14054b0f5		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4593	0x14054b0fd		4c8b6270		MOVQ 0x70(DX), R12										
+  client.go:4593	0x14054b101		4d8ba424600b0000	MOVQ 0xb60(R12), R12										
+  client.go:4593	0x14054b109		41807c242000		CMPB 0x20(R12), $0x0										
+  client.go:4593	0x14054b10f		0f8480000000		JE 0x14054b195											
+  client.go:4593	0x14054b115		88842487000000		MOVB AL, 0x87(SP)										
+  client.go:4594	0x14054b11c		4c8ba2b8010000		MOVQ 0x1b8(DX), R12										
+  client.go:4594	0x14054b123		4c8baac0010000		MOVQ 0x1c0(DX), R13										
+  client.go:4594	0x14054b12a		4c8bbac8010000		MOVQ 0x1c8(DX), R15										
+  client.go:4595	0x14054b131		4883ba9001000000	CMPQ 0x190(DX), $0x0										
+  client.go:4595	0x14054b139		0f848f020000		JE 0x14054b3ce											
+  client.go:4595	0x14054b13f		48837a6805		CMPQ 0x68(DX), $0x5										
+  client.go:4595	0x14054b144		0f8584020000		JNE 0x14054b3ce											
+  client.go:4595	0x14054b14a		4d85ed			TESTQ R13, R13											
+  client.go:4595	0x14054b14d		0f847b020000		JE 0x14054b3ce											
+  client.go:4353	0x14054b153		4983fd08		CMPQ R13, $0x8											
+  client.go:4353	0x14054b157		7e2d			JLE 0x14054b186											
+  store.go:855		0x14054b159		4c89e6			MOVQ R12, SI											
+  store.go:855		0x14054b15c		49f7dc			NEGQ R12											
+  store.go:855		0x14054b15f		90			NOPL												
+  store.go:855		0x14054b160		4983fc08		CMPQ R12, $0x8											
+  store.go:855		0x14054b164		0f822a040000		JB 0x14054b594											
+  client.go:4353	0x14054b16a		49bc244a532e41434b2e	MOVQ $0x2e4b43412e534a24, R12									
+  client.go:4353	0x14054b174		4c3926			CMPQ 0(SI), R12											
+  client.go:4363	0x14054b177		7510			JNE 0x14054b189											
+  client.go:4367	0x14054b179		4531e4			XORL R12, R12											
+  client.go:4437	0x14054b17c		4989d0			MOVQ DX, R8											
+  client.go:4367	0x14054b17f		31d2			XORL DX, DX											
+  client.go:4367	0x14054b181		e9cc030000		JMP 0x14054b552											
+  client.go:4599	0x14054b186		4c89e6			MOVQ R12, SI											
+  client.go:4353	0x14054b189		49c7c0ffffffff		MOVQ $-0x1, R8											
+  client.go:4384	0x14054b190		e9b0020000		JMP 0x14054b445											
+  client.go:4604	0x14054b195		84c0			TESTL AL, AL											
+  client.go:4604	0x14054b197		0f8526020000		JNE 0x14054b3c3											
+  client.go:4604	0x14054b19d		4883bac001000000	CMPQ 0x1c0(DX), $0x0										
+  client.go:4604	0x14054b1a5		0f8418020000		JE 0x14054b3c3											
+  client.go:4604	0x14054b1ab		88842487000000		MOVB AL, 0x87(SP)										
+  client.go:4605	0x14054b1b2		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4605	0x14054b1ba		e84111b5ff		CALL sync.(*RWMutex).Lock(SB)									
+  client.go:4606	0x14054b1bf		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4606	0x14054b1c7		80b8fa13000000		CMPB 0x13fa(AX), $0x0										
+  client.go:4606	0x14054b1ce		0f84da010000		JE 0x14054b3ae											
+  client.go:4607	0x14054b1d4		488b98b8010000		MOVQ 0x1b8(AX), BX										
+  client.go:4607	0x14054b1db		488b88c0010000		MOVQ 0x1c0(AX), CX										
+  client.go:4607	0x14054b1e2		488bb8c8010000		MOVQ 0x1c8(AX), DI										
+  client.go:4607	0x14054b1e9		e832040000		CALL github.com/nats-io/nats-server/v2/server.(*client).subForReply(SB)				
+  client.go:4607	0x14054b1ee		4885c0			TESTQ AX, AX											
+  client.go:4607	0x14054b1f1		0f84b7010000		JE 0x14054b3ae											
+  client.go:4607	0x14054b1f7		48898424f8000000	MOVQ AX, 0xf8(SP)										
+  client.go:4608	0x14054b1ff		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4608	0x14054b207		488bb278010000		MOVQ 0x178(DX), SI										
+  client.go:4608	0x14054b20e		4883c620		ADDQ $0x20, SI											
+  client.go:4608	0x14054b212		4889b424d0000000	MOVQ SI, 0xd0(SP)										
+  client.go:4609	0x14054b21a		488db42458010000	LEAQ 0x158(SP), SI										
+  client.go:4609	0x14054b222		440f113e		MOVUPS X15, 0(SI)										
+  client.go:4609	0x14054b226		440f117e10		MOVUPS X15, 0x10(SI)										
+  client.go:4609	0x14054b22b		440f117e20		MOVUPS X15, 0x20(SI)										
+  client.go:4609	0x14054b230		440f117e30		MOVUPS X15, 0x30(SI)										
+  client.go:4609	0x14054b235		440f117e40		MOVUPS X15, 0x40(SI)										
+  client.go:4609	0x14054b23a		488b82b8010000		MOVQ 0x1b8(DX), AX										
+  client.go:4609	0x14054b241		488b9ac0010000		MOVQ 0x1c0(DX), BX										
+  client.go:4609	0x14054b248		488b8ac8010000		MOVQ 0x1c8(DX), CX										
+  client.go:4609	0x14054b24f		e8ecbbb3ff		CALL runtime.convTslice(SB)									
+  client.go:4609	0x14054b254		488d15edf9e601		LEAQ type:*+562064(SB), DX									
+  client.go:4609	0x14054b25b		4889942458010000	MOVQ DX, 0x158(SP)										
+  client.go:4609	0x14054b263		4889842460010000	MOVQ AX, 0x160(SP)										
+  client.go:4609	0x14054b26b		488b9424f8000000	MOVQ 0xf8(SP), DX										
+  client.go:4609	0x14054b273		488b4268		MOVQ 0x68(DX), AX										
+  client.go:4609	0x14054b277		488b5a70		MOVQ 0x70(DX), BX										
+  client.go:4609	0x14054b27b		488b4a78		MOVQ 0x78(DX), CX										
+  client.go:4609	0x14054b27f		90			NOPL												
+  client.go:4609	0x14054b280		e8bbbbb3ff		CALL runtime.convTslice(SB)									
+  client.go:4609	0x14054b285		488d15bcf9e601		LEAQ type:*+562064(SB), DX									
+  client.go:4609	0x14054b28c		4889942468010000	MOVQ DX, 0x168(SP)										
+  client.go:4609	0x14054b294		4889842470010000	MOVQ AX, 0x170(SP)										
+  client.go:4609	0x14054b29c		488b8424d0000000	MOVQ 0xd0(SP), AX										
+  client.go:4609	0x14054b2a4		e897bab3ff		CALL runtime.convT64(SB)									
+  client.go:4609	0x14054b2a9		488d15c85ff001		LEAQ type:*+1178048(SB), DX									
+  client.go:4609	0x14054b2b0		4889942478010000	MOVQ DX, 0x178(SP)										
+  client.go:4609	0x14054b2b8		4889842480010000	MOVQ AX, 0x180(SP)										
+  client.go:4609	0x14054b2c0		488b8424d0000000	MOVQ 0xd0(SP), AX										
+  client.go:4609	0x14054b2c8		e873bab3ff		CALL runtime.convT64(SB)									
+  client.go:4609	0x14054b2cd		488d15a45ff001		LEAQ type:*+1178048(SB), DX									
+  client.go:4609	0x14054b2d4		4889942488010000	MOVQ DX, 0x188(SP)										
+  client.go:4609	0x14054b2dc		4889842490010000	MOVQ AX, 0x190(SP)										
+  client.go:4609	0x14054b2e4		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4609	0x14054b2ec		488b8270010000		MOVQ 0x170(DX), AX										
+  client.go:4609	0x14054b2f3		488b9a78010000		MOVQ 0x178(DX), BX										
+  client.go:4609	0x14054b2fa		488b8a80010000		MOVQ 0x180(DX), CX										
+  client.go:4609	0x14054b301		e83abbb3ff		CALL runtime.convTslice(SB)									
+  client.go:4609	0x14054b306		488d153bf9e601		LEAQ type:*+562064(SB), DX									
+  client.go:4609	0x14054b30d		4889942498010000	MOVQ DX, 0x198(SP)										
+  client.go:4609	0x14054b315		48898424a0010000	MOVQ AX, 0x1a0(SP)										
+  client.go:4609	0x14054b31d		488d05dd5bf400		LEAQ runtime.rodata+687873(SB), AX								
+  client.go:4609	0x14054b324		bb36000000		MOVL $0x36, BX											
+  client.go:4609	0x14054b329		488d8c2458010000	LEAQ 0x158(SP), CX										
+  client.go:4609	0x14054b331		bf05000000		MOVL $0x5, DI											
+  client.go:4609	0x14054b336		89fe			MOVL DI, SI											
+  client.go:4609	0x14054b338		e843a2bcff		CALL fmt.Sprintf(SB)										
+  client.go:4610	0x14054b33d		4885c0			TESTQ AX, AX											
+  client.go:4610	0x14054b340		488d15b9a21202		LEAQ internal/fuzz._counters(SB), DX								
+  client.go:4610	0x14054b347		480f45d0		CMOVNE AX, DX											
+  client.go:4610	0x14054b34b		488b842418020000	MOVQ 0x218(SP), AX										
+  client.go:4610	0x14054b353		4889d9			MOVQ BX, CX											
+  client.go:4610	0x14054b356		4889cf			MOVQ CX, DI											
+  client.go:4610	0x14054b359		4889d3			MOVQ DX, BX											
+  client.go:4610	0x14054b35c		0f1f4000		NOPL 0(AX)											
+  client.go:4610	0x14054b360		e8bb4dffff		CALL github.com/nats-io/nats-server/v2/server.(*client).queueOutbound(SB)			
+  client.go:4125	0x14054b365		488b8c2418020000	MOVQ 0x218(SP), CX										
+  client.go:4125	0x14054b36d		488b99a8150000		MOVQ 0x15a8(CX), BX										
+  client.go:4125	0x14054b374		4889ca			MOVQ CX, DX											
+  client.go:4611	0x14054b377		90			NOPL												
+  client.go:4125	0x14054b378		488d05f954e801		LEAQ type:*+651200(SB), AX									
+  client.go:4125	0x14054b37f		4889d1			MOVQ DX, CX											
+  client.go:4125	0x14054b382		e819e2abff		CALL runtime.mapaccess2_fast64(SB)								
+  client.go:4125	0x14054b387		84db			TESTL BL, BL											
+  client.go:4610	0x14054b389		7523			JNE 0x14054b3ae											
+  client.go:4126	0x14054b38b		488b8c2418020000	MOVQ 0x218(SP), CX										
+  client.go:4126	0x14054b393		ff8120150000		INCL 0x1520(CX)											
+  client.go:4127	0x14054b399		488b99a8150000		MOVQ 0x15a8(CX), BX										
+  client.go:4127	0x14054b3a0		488d05d154e801		LEAQ type:*+651200(SB), AX									
+  client.go:4127	0x14054b3a7		e834e8abff		CALL runtime.mapassign_fast64ptr(SB)								
+  client.go:4127	0x14054b3ac		8400			TESTB AL, 0(AX)											
+  client.go:4614	0x14054b3ae		488b842450010000	MOVQ 0x150(SP), AX										
+  client.go:4614	0x14054b3b6		e88510b5ff		CALL sync.(*RWMutex).Unlock(SB)									
+  client.go:4617	0x14054b3bb		0fb6842487000000	MOVZX 0x87(SP), AX										
+  client.go:4617	0x14054b3c3		31db			XORL BX, BX											
+  client.go:4617	0x14054b3c5		4881c408020000		ADDQ $0x208, SP											
+  client.go:4617	0x14054b3cc		5d			POPQ BP												
+  client.go:4617	0x14054b3cd		c3			RET												
+  client.go:4599	0x14054b3ce		4c8b8270010000		MOVQ 0x170(DX), R8										
+  client.go:4599	0x14054b3d5		4c8b8a78010000		MOVQ 0x178(DX), R9										
+  client.go:4599	0x14054b3dc		4c8b9280010000		MOVQ 0x180(DX), R10										
+  client.go:4599	0x14054b3e3		4c892424		MOVQ R12, 0(SP)											
+  client.go:4599	0x14054b3e7		4c896c2408		MOVQ R13, 0x8(SP)										
+  client.go:4599	0x14054b3ec		4c897c2410		MOVQ R15, 0x10(SP)										
+  client.go:4599	0x14054b3f1		48895c2418		MOVQ BX, 0x18(SP)										
+  client.go:4599	0x14054b3f6		48894c2420		MOVQ CX, 0x20(SP)										
+  client.go:4599	0x14054b3fb		48897c2428		MOVQ DI, 0x28(SP)										
+  client.go:4599	0x14054b400		4889d0			MOVQ DX, AX											
+  client.go:4599	0x14054b403		488b9c2448010000	MOVQ 0x148(SP), BX										
+  client.go:4599	0x14054b40b		488b8c2420020000	MOVQ 0x220(SP), CX										
+  client.go:4599	0x14054b413		488bbc2428020000	MOVQ 0x228(SP), DI										
+  client.go:4599	0x14054b41b		488bb42430020000	MOVQ 0x230(SP), SI										
+  client.go:4599	0x14054b423		4531db			XORL R11, R11											
+  client.go:4599	0x14054b426		e8f5f30a00		CALL github.com/nats-io/nats-server/v2/server.(*client).sendMsgToGateways(SB)			
+  client.go:4599	0x14054b42b		0fb6942487000000	MOVZX 0x87(SP), DX										
+  client.go:4599	0x14054b433		09d0			ORL DX, AX											
+  client.go:4604	0x14054b435		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4604	0x14054b43d		0f1f00			NOPL 0(AX)											
+  client.go:4599	0x14054b440		e950fdffff		JMP 0x14054b195											
+  client.go:4384	0x14054b445		4983f8ff		CMPQ R8, $-0x1											
+  client.go:4595	0x14054b449		7408			JE 0x14054b453											
+  client.go:4599	0x14054b44b		4989f4			MOVQ SI, R12											
+  client.go:4595	0x14054b44e		e97bffffff		JMP 0x14054b3ce											
+  client.go:4593	0x14054b453		4889bc24c0000000	MOVQ DI, 0xc0(SP)										
+  client.go:4593	0x14054b45b		48898c24b8000000	MOVQ CX, 0xb8(SP)										
+  client.go:4593	0x14054b463		48899c2428010000	MOVQ BX, 0x128(SP)										
+  client.go:4596	0x14054b46b		498d5d01		LEAQ 0x1(R13), BX										
+  client.go:4596	0x14054b46f		4889f0			MOVQ SI, AX											
+  client.go:4596	0x14054b472		4c89e9			MOVQ R13, CX											
+  client.go:4596	0x14054b475		bf01000000		MOVL $0x1, DI											
+  client.go:4596	0x14054b47a		488d35375cf001		LEAQ type:*+1177600(SB), SI									
+  client.go:4596	0x14054b481		e83a07b4ff		CALL runtime.growslice(SB)									
+  client.go:4596	0x14054b486		c64403ff40		MOVB $0x40, -0x1(BX)(AX*1)									
+  client.go:4597	0x14054b48b		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4597	0x14054b493		488bba90010000		MOVQ 0x190(DX), DI										
+  client.go:4597	0x14054b49a		4c8d041f		LEAQ 0(DI)(BX*1), R8										
+  client.go:4597	0x14054b49e		4c8b8a88010000		MOVQ 0x188(DX), R9										
+  client.go:4597	0x14054b4a5		4c39c1			CMPQ CX, R8											
+  client.go:4597	0x14054b4a8		7342			JAE 0x14054b4ec											
+  client.go:4597	0x14054b4aa		4889bc24e0000000	MOVQ DI, 0xe0(SP)										
+  client.go:4597	0x14054b4b2		4c898c2430010000	MOVQ R9, 0x130(SP)										
+  client.go:4596	0x14054b4ba		48899c24a8000000	MOVQ BX, 0xa8(SP)										
+  client.go:4597	0x14054b4c2		4c89c3			MOVQ R8, BX											
+  client.go:4597	0x14054b4c5		488d35ec5bf001		LEAQ type:*+1177600(SB), SI									
+  client.go:4597	0x14054b4cc		e8ef06b4ff		CALL runtime.growslice(SB)									
+  client.go:4597	0x14054b4d1		488bbc24e0000000	MOVQ 0xe0(SP), DI										
+  client.go:4597	0x14054b4d9		4c8b8c2430010000	MOVQ 0x130(SP), R9										
+  client.go:4597	0x14054b4e1		4989d8			MOVQ BX, R8											
+  client.go:4597	0x14054b4e4		488b9c24a8000000	MOVQ 0xa8(SP), BX										
+  client.go:4597	0x14054b4ec		48898c24b0000000	MOVQ CX, 0xb0(SP)										
+  client.go:4597	0x14054b4f4		4c898424a8000000	MOVQ R8, 0xa8(SP)										
+  client.go:4597	0x14054b4fc		4889842418010000	MOVQ AX, 0x118(SP)										
+  client.go:4597	0x14054b504		4801d8			ADDQ BX, AX											
+  client.go:4597	0x14054b507		4c89cb			MOVQ R9, BX											
+  client.go:4597	0x14054b50a		4889f9			MOVQ DI, CX											
+  client.go:4597	0x14054b50d		e80e62b4ff		CALL runtime.memmove(SB)									
+  client.go:4599	0x14054b512		488b8c24b8000000	MOVQ 0xb8(SP), CX										
+  client.go:4599	0x14054b51a		488b942418020000	MOVQ 0x218(SP), DX										
+  client.go:4599	0x14054b522		488b9c2428010000	MOVQ 0x128(SP), BX										
+  client.go:4599	0x14054b52a		488bbc24c0000000	MOVQ 0xc0(SP), DI										
+  client.go:4599	0x14054b532		4c8bbc24b0000000	MOVQ 0xb0(SP), R15										
+  client.go:4599	0x14054b53a		4c8bac24a8000000	MOVQ 0xa8(SP), R13										
+  client.go:4599	0x14054b542		4c8ba42418010000	MOVQ 0x118(SP), R12										
+  client.go:4597	0x14054b54a		e97ffeffff		JMP 0x14054b3ce											
+  client.go:4367	0x14054b54f		49ffc4			INCQ R12											
+  client.go:4367	0x14054b552		4d39ec			CMPQ R12, R13											
+  client.go:4367	0x14054b555		7d2e			JGE 0x14054b585											
+  client.go:4367	0x14054b557		460fb60c26		MOVZX 0(SI)(R12*1), R9										
+  client.go:4367	0x14054b55c		0f1f4000		NOPL 0(AX)											
+  client.go:4369	0x14054b560		4180f92e		CMPL R9, $0x2e											
+  client.go:4369	0x14054b564		7505			JNE 0x14054b56b											
+  client.go:4370	0x14054b566		48ffc2			INCQ DX												
+  client.go:4370	0x14054b569		ebe4			JMP 0x14054b54f											
+  client.go:4371	0x14054b56b		4180f940		CMPL R9, $0x40											
+  client.go:4371	0x14054b56f		75de			JNE 0x14054b54f											
+  client.go:4372	0x14054b571		4883fa08		CMPQ DX, $0x8											
+  client.go:4372	0x14054b575		7cd8			JL 0x14054b54f											
+  client.go:4599	0x14054b577		4c89c2			MOVQ R8, DX											
+  client.go:4595	0x14054b57a		4d89e0			MOVQ R12, R8											
+  client.go:4595	0x14054b57d		0f1f00			NOPL 0(AX)											
+  client.go:4384	0x14054b580		e9c0feffff		JMP 0x14054b445											
+  client.go:4599	0x14054b585		4c89c2			MOVQ R8, DX											
+  client.go:4599	0x14054b588		49c7c0ffffffff		MOVQ $-0x1, R8											
+  client.go:4384	0x14054b58f		e9b1feffff		JMP 0x14054b445											
+  store.go:855		0x14054b594		4885f6			TESTQ SI, SI											
+  store.go:855		0x14054b597		7407			JE 0x14054b5a0											
+  store.go:855		0x14054b599		e8622bb3ff		CALL runtime.panicunsafestringlen(SB)								
+  store.go:855		0x14054b59e		6690			NOPW												
+  store.go:855		0x14054b5a0		e89b2bb3ff		CALL runtime.panicunsafestringnilptr(SB)							
+  store.go:855		0x14054b5a5		4d85c0			TESTQ R8, R8											
+  store.go:855		0x14054b5a8		7405			JE 0x14054b5af											
+  store.go:855		0x14054b5aa		e8512bb3ff		CALL runtime.panicunsafestringlen(SB)								
+  store.go:855		0x14054b5af		e88c2bb3ff		CALL runtime.panicunsafestringnilptr(SB)							
+  store.go:855		0x14054b5b4		4d85c0			TESTQ R8, R8											
+  store.go:855		0x14054b5b7		7407			JE 0x14054b5c0											
+  store.go:855		0x14054b5b9		e8422bb3ff		CALL runtime.panicunsafestringlen(SB)								
+  store.go:855		0x14054b5be		6690			NOPW												
+  store.go:855		0x14054b5c0		e87b2bb3ff		CALL runtime.panicunsafestringnilptr(SB)							
+  store.go:855		0x14054b5c5		4d85c9			TESTQ R9, R9											
+  store.go:855		0x14054b5c8		7405			JE 0x14054b5cf											
+  store.go:855		0x14054b5ca		e8312bb3ff		CALL runtime.panicunsafestringlen(SB)								
+  store.go:855		0x14054b5cf		e86c2bb3ff		CALL runtime.panicunsafestringnilptr(SB)							
+  store.go:855		0x14054b5d4		90			NOPL												
+  client.go:4430	0x14054b5d5		4889442408		MOVQ AX, 0x8(SP)										
+  client.go:4430	0x14054b5da		48895c2410		MOVQ BX, 0x10(SP)										
+  client.go:4430	0x14054b5df		48894c2418		MOVQ CX, 0x18(SP)										
+  client.go:4430	0x14054b5e4		48897c2420		MOVQ DI, 0x20(SP)										
+  client.go:4430	0x14054b5e9		e8523fb4ff		CALL runtime.morestack_noctxt.abi0(SB)								
+  client.go:4430	0x14054b5ee		488b442408		MOVQ 0x8(SP), AX										
+  client.go:4430	0x14054b5f3		488b5c2410		MOVQ 0x10(SP), BX										
+  client.go:4430	0x14054b5f8		488b4c2418		MOVQ 0x18(SP), CX										
+  client.go:4430	0x14054b5fd		488b7c2420		MOVQ 0x20(SP), DI										
+  client.go:4430	0x14054b602		e999efffff		JMP github.com/nats-io/nats-server/v2/server.(*client).processInboundClientMsg(SB)		
+  :-1			0x14054b607		cc			INT $0x3											
+  :-1			0x14054b608		cc			INT $0x3											
+  :-1			0x14054b609		cc			INT $0x3											
+  :-1			0x14054b60a		cc			INT $0x3											
+  :-1			0x14054b60b		cc			INT $0x3											
+  :-1			0x14054b60c		cc			INT $0x3											
+  :-1			0x14054b60d		cc			INT $0x3											
+  :-1			0x14054b60e		cc			INT $0x3											
+  :-1			0x14054b60f		cc			INT $0x3											
+  :-1			0x14054b610		cc			INT $0x3											
+  :-1			0x14054b611		cc			INT $0x3											
+  :-1			0x14054b612		cc			INT $0x3											
+  :-1			0x14054b613		cc			INT $0x3											
+  :-1			0x14054b614		cc			INT $0x3											
+  :-1			0x14054b615		cc			INT $0x3											
+  :-1			0x14054b616		cc			INT $0x3											
+  :-1			0x14054b617		cc			INT $0x3											
+  :-1			0x14054b618		cc			INT $0x3											
+  :-1			0x14054b619		cc			INT $0x3											
+  :-1			0x14054b61a		cc			INT $0x3											
+  :-1			0x14054b61b		cc			INT $0x3											
+  :-1			0x14054b61c		cc			INT $0x3											
+  :-1			0x14054b61d		cc			INT $0x3											
+  :-1			0x14054b61e		cc			INT $0x3											
+  :-1			0x14054b61f		cc			INT $0x3											

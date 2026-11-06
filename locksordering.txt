@@ -73,3 +73,15 @@ another account (which would take that account's locks in unknown order).
 
     cmu -> Account
     cmu -> client
+
+The optional per-account/per-subject publish ledger (server/pubstats.go) uses
+two independent leaf locks that must never be acquired while holding the
+Server, client or Account locks:
+
+    pubStatsMgr.lease -> pubSubjectLedger.mu
+
+Records and snapshots take the lease RLock; global reset and account removal
+take it Lock. The publish hot path calls the ledger without holding any
+client/Account/Server lock. HTTP handlers for /pubstatz must call the ledger
+outside of the Server lock (the httpReqStats counter section follows the same
+short-lock-then-release pattern as other handlers).

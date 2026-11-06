@@ -576,6 +576,10 @@ type Options struct {
 	// FeatureFlags the server opts-in to (or opts-out of). They will be included in 'Z' responses.
 	FeatureFlags map[string]bool `json:"-"`
 
+	// PublishStats enables the optional per-account, per-subject publish-side
+	// counters exposed at /pubstatz. Disabled by default; in-memory only.
+	PublishStats PublishStatsOpts `json:"publish_stats,omitempty"`
+
 	// OCSPConfig enables OCSP Stapling in the server.
 	OCSPConfig    *OCSPConfig
 	tlsConfigOpts *TLSConfigOpts
@@ -1868,6 +1872,60 @@ func (o *Options) processConfigFileLine(k string, v any, errors *[]error, warnin
 		if err != nil {
 			*errors = append(*errors, err)
 			return
+		}
+	case "publish_stats":
+		// Boolean shorthand: publish_stats: true/false.
+		if b, ok := v.(bool); ok {
+			o.PublishStats.Enabled = b
+			return
+		}
+		m, ok := v.(map[string]any)
+		if !ok {
+			*errors = append(*errors, &configErr{tk, fmt.Sprintf("error parsing publish_stats: unsupported type %T", v)})
+			return
+		}
+		var (
+			enabled bool
+			hasEnab bool
+			capVal  int64
+			hasCap  bool
+			capTk   token
+		)
+		for mk, mv := range m {
+			stk, mv := unwrapValue(mv, &lt)
+			switch strings.ToLower(mk) {
+			case "enabled":
+				b, ok := mv.(bool)
+				if !ok {
+					*errors = append(*errors, &configErr{stk, fmt.Sprintf("error parsing publish_stats.enabled: expected bool, got %T", mv)})
+					return
+				}
+				enabled, hasEnab = b, true
+			case "max_subjects_per_account":
+				n, ok := mv.(int64)
+				if !ok {
+					*errors = append(*errors, &configErr{stk, fmt.Sprintf("error parsing publish_stats.max_subjects_per_account: expected integer, got %T", mv)})
+					return
+				}
+				capVal, hasCap, capTk = n, true, stk
+			default:
+				*errors = append(*errors, &configErr{stk, fmt.Sprintf("unknown publish_stats field %q", mk)})
+				return
+			}
+		}
+		if hasEnab {
+			o.PublishStats.Enabled = enabled
+		}
+		// The capacity is only validated/applied when the feature is enabled;
+		// with enabled:false the value is ignored. Zero keeps the default.
+		if hasCap && (enabled || !hasEnab) {
+			if capVal < 0 {
+				*errors = append(*errors, &configErr{capTk, "publish_stats.max_subjects_per_account must be greater than 0"})
+				return
+			}
+			if capVal > 0 {
+				o.PublishStats.MaxSubjectsPerAccount = int(capVal)
+			}
 		}
 	case "default_js_domain":
 		vv, ok := v.(map[string]any)

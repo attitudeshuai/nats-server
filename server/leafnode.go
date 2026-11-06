@@ -3420,6 +3420,14 @@ func (c *client) processInboundLeafMsg(msg []byte) {
 		return
 	}
 
+	// Optional per-account/per-subject publish ledger: the leaf message
+	// passed permissions and is entering the account's subject space. Only a
+	// genuine leafnode connection is counted. When disabled this is a single
+	// nil check.
+	if c.kind == LEAF {
+		srv.accountPublishStats(acc, subject, int64(len(msg)-LEN_CR_LF))
+	}
+
 	// Match the subscriptions. We will use our own L1 map if
 	// it's still valid, avoiding contention on the shared sublist.
 	var r *SublistResult

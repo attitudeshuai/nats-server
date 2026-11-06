@@ -4525,6 +4525,16 @@ func (c *client) processInboundClientMsg(msg []byte) (bool, bool) {
 		return true, false
 	}
 
+	// Optional per-account/per-subject publish ledger. The message passed all
+	// local publish checks and is entering the account's subject space. Only
+	// genuine client ingress is counted: internal re-entries into this
+	// function (system events, sendq, JetStream, MQTT retained redelivery)
+	// run under internal client kinds and are excluded. When disabled this is
+	// a single nil check (no subject conversion, no lock).
+	if c.kind == CLIENT {
+		c.srv.accountPublishStats(acc, string(c.pa.subject), int64(len(msg)-LEN_CR_LF))
+	}
+
 	// Match the subscriptions. We will use our own L1 map if
 	// it's still valid, avoiding contention on the shared sublist.
 	var r *SublistResult

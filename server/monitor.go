@@ -1561,6 +1561,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	<a href=.%s>Connections<span class="endpoint"> %s</span></a>
 	<a href=.%s>Accounts<span class="endpoint"> %s</span></a>
 	<a href=.%s>Account Stats<span class="endpoint"> %s</span></a>
+	<a href=.%s>Publish Stats<span class="endpoint"> %s</span></a>
 	<a href=.%s>Subscriptions<span class="endpoint"> %s</span></a>
 	<a href=.%s>Routes<span class="endpoint"> %s</span></a>
 	<a href=.%s>LeafNodes<span class="endpoint"> %s</span></a>
@@ -1578,6 +1579,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		s.basePath(ConnzPath), ConnzPath,
 		s.basePath(AccountzPath), AccountzPath,
 		s.basePath(AccountStatzPath), AccountStatzPath,
+		s.basePath(PubStatszPath), PubStatszPath,
 		s.basePath(SubszPath), SubszPath,
 		s.basePath(RoutezPath), RoutezPath,
 		s.basePath(LeafzPath), LeafzPath,
@@ -2556,6 +2558,118 @@ type AccountStatz struct {
 	ID       string         `json:"server_id"`
 	Now      time.Time      `json:"now"`
 	Accounts []*AccountStat `json:"account_statz"`
+}
+
+// PubStatszOptions are options passed to per-account/per-subject publish
+// stats requests. Accounts filters the output by account name (unknown names
+// are ignored). Reset triggers a global atomic reset before taking the
+// returned cross-section.
+type PubStatszOptions struct {
+	Accounts []string `json:"accounts"`
+	Reset    bool     `json:"reset"`
+}
+
+// PubStatsz is the output of the /pubstatz monitoring endpoint. It is purely
+// additive to the existing monitoring surface; all per-subject data lives
+// under this new endpoint.
+type PubStatsz struct {
+	// ServerID is the monitored server's ID.
+	ServerID string `json:"server_id"`
+	// Now is the time the cross-section was taken.
+	Now time.Time `json:"now"`
+	// Enabled reports whether the per-subject publish ledger is active.
+	Enabled bool `json:"enabled"`
+	// MaxSubjectsPerAccount is the configured per-account subject capacity.
+	MaxSubjectsPerAccount int `json:"max_subjects_per_account,omitempty"`
+	// ResetTime is the time of the last global reset, when one occurred.
+	ResetTime *time.Time `json:"reset_time,omitempty"`
+	// Accounts contains the per-account cross-sections.
+	Accounts []*PubStatsAccount `json:"accounts"`
+}
+
+// PubStatsz returns a self-consistent cross-section of the optional
+// per-account, per-subject publish ledger. When the ledger is disabled the
+// response reports Enabled:false with no accounts and reset requests have no
+// effect.
+func (s *Server) PubStatsz(opts *PubStatszOptions) (*PubStatsz, error) {
+	res := &PubStatsz{
+		ServerID: s.ID(),
+		Now:      time.Now().UTC(),
+		Accounts: []*PubStatsAccount{},
+	}
+	mgr := s.pubStats.Load()
+	if mgr == nil {
+		return res, nil
+	}
+
+	var wanted map[string]struct{}
+	if opts != nil && len(opts.Accounts) > 0 {
+		wanted = make(map[string]struct{}, len(opts.Accounts))
+		for _, name := range opts.Accounts {
+			if name = strings.TrimSpace(name); name != _EMPTY_ {
+				wanted[name] = struct{}{}
+			}
+		}
+	}
+	// Resolve account existence outside the ledger lease so zero views can be
+	// emitted for existing-but-quiet accounts without materializing ledgers.
+	var existing map[string]struct{}
+	if wanted != nil {
+		existing = make(map[string]struct{}, len(wanted))
+		s.accounts.Range(func(k, _ any) bool {
+			if name, ok := k.(string); ok {
+				if _, keep := wanted[name]; keep {
+					existing[name] = struct{}{}
+				}
+			}
+			return true
+		})
+	}
+
+	if opts != nil && opts.Reset {
+		rt, _ := mgr.reset()
+		res.ResetTime = &rt
+	}
+
+	accounts, resetTime := mgr.snapshot(wanted, existing)
+	if res.ResetTime == nil && !resetTime.IsZero() {
+		rt := resetTime
+		res.ResetTime = &rt
+	}
+	res.Enabled = true
+	res.MaxSubjectsPerAccount = mgr.capacity
+	res.Accounts = accounts
+	return res, nil
+}
+
+// HandlePubStatsz processes HTTP requests for the per-account/per-subject
+// publish ledger at /pubstatz.
+func (s *Server) HandlePubStatsz(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	s.httpReqStats[PubStatszPath]++
+	s.mu.Unlock()
+
+	reset, err := decodeBool(w, r, "reset")
+	if err != nil {
+		return
+	}
+	var accounts []string
+	if names := r.URL.Query().Get("accounts"); names != _EMPTY_ {
+		accounts = strings.Split(names, ",")
+	}
+
+	l, err := s.PubStatsz(&PubStatszOptions{Accounts: accounts, Reset: reset})
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	b, err := json.MarshalIndent(l, "", "  ")
+	if err != nil {
+		s.Errorf("Error marshaling response to %s request: %v", PubStatszPath, err)
+		return
+	}
+	ResponseHandler(w, r, b)
 }
 
 // AccountStatzOptions are options passed to account stats requests.

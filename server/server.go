@@ -191,6 +191,7 @@ type Server struct {
 	sys                 *internal
 	sysAcc              atomic.Pointer[Account]
 	js                  atomic.Pointer[jetStream]
+	pubStats            atomic.Pointer[pubStatsMgr] // Optional per-account/per-subject publish ledger; nil when disabled.
 	dios                *diskIOSemaphore
 	isMetaLeader        atomic.Bool
 	jsClustered         atomic.Bool
@@ -794,6 +795,12 @@ func NewServer(opts *Options) (*Server, error) {
 
 	// By default we'll allow account NRG.
 	s.accountNRGAllowed.Store(true)
+
+	// Optional per-account/per-subject publish ledger; starts at zero and is
+	// in-memory only.
+	if opts.PublishStats.Enabled {
+		s.pubStats.Store(newPubStatsMgr(opts.PublishStats.capacity()))
+	}
 
 	// Fill up the maximum in flight syncRequests for this server.
 	// Used in JetStream catchup semantics.
@@ -3080,6 +3087,7 @@ const (
 	StackszPath      = "/stacksz"
 	AccountzPath     = "/accountz"
 	AccountStatzPath = "/accstatz"
+	PubStatszPath    = "/pubstatz"
 	JszPath          = "/jsz"
 	HealthzPath      = "/healthz"
 	IPQueuesPath     = "/ipqueuesz"
@@ -3195,6 +3203,7 @@ func (s *Server) startMonitoring(secure bool) error {
 	mux.HandleFunc(s.basePath(AccountzPath), s.HandleAccountz)
 	// Accstatz
 	mux.HandleFunc(s.basePath(AccountStatzPath), s.HandleAccountStatz)
+	mux.HandleFunc(s.basePath(PubStatszPath), s.HandlePubStatsz)
 	// Jsz
 	mux.HandleFunc(s.basePath(JszPath), s.HandleJsz)
 	// Healthz
