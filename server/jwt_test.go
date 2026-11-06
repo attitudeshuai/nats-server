@@ -622,6 +622,58 @@ func TestJWTAccountExpiresAfterConnect(t *testing.T) {
 	}
 }
 
+// New connections to an account whose ledgers are being (or have been)
+// cleared must be rejected with an identifiable expiration reason, not a
+// generic authorization violation.
+func TestJWTAccountExpiredNewConnectionReason(t *testing.T) {
+	nac := newJWTTestAccountClaims()
+	now := time.Now()
+	nac.IssuedAt = now.Add(-10 * time.Second).Unix()
+	nac.Expires = now.Round(time.Second).Add(time.Second).Unix()
+	s, akp, c, cr := setupJWTTestWitAccountClaims(t, nac, "+OK")
+	defer s.Shutdown()
+	defer c.close()
+
+	apub, _ := akp.PublicKey()
+	acc, err := s.LookupAccount(apub)
+	if acc == nil {
+		t.Fatalf("Expected to retrieve the account: %v", err)
+	}
+
+	if l, _ := cr.ReadString('\n'); !strings.HasPrefix(l, "PONG") {
+		t.Fatalf("Expected PONG")
+	}
+
+	// Wait for the account to expire.
+	checkFor(t, 3*time.Second, 100*time.Millisecond, func() error {
+		if acc.IsExpired() {
+			if !acc.BooksCleared() {
+				return fmt.Errorf("Account expired but books not cleared yet")
+			}
+			return nil
+		}
+		return fmt.Errorf("Account not expired yet")
+	})
+
+	// Existing connection is disconnected with the expiration reason.
+	l, _ := cr.ReadString('\n')
+	if !strings.Contains(l, "Account Authentication Expired") {
+		t.Fatalf("Expected expiration disconnect reason, got %q", l)
+	}
+
+	// A new connection during the retired window gets the same reason.
+	c2, cr2, cs2 := createClient(t, s, akp)
+	defer c2.close()
+	c2.parseAsync(cs2)
+	l, _ = cr2.ReadString('\n')
+	if !strings.HasPrefix(l, "-ERR ") {
+		t.Fatalf("Expected an error, got %q", l)
+	}
+	if !strings.Contains(l, "Account Authentication Expired") {
+		t.Fatalf("Expected an identifiable expiration reason, got %q", l)
+	}
+}
+
 func TestJWTAccountRenew(t *testing.T) {
 	nac := newJWTTestAccountClaims()
 	// Create an account that has expired.

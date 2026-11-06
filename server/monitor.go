@@ -2779,6 +2779,21 @@ type AccountInfo struct {
 	RevokedUser map[string]time.Time `json:"revoked_user,omitempty"`
 	Sublist     *SublistStats        `json:"sublist_stats,omitempty"`
 	Responses   map[string]ExtImport `json:"responses,omitempty"`
+
+	// Runtime retirement state. ExitReason is empty while the account is
+	// active, otherwise "expired" or "revoked". ClearingBooks/BooksCleared
+	// track ledger clearing and the remaining fields are the residual counts
+	// that must reach zero within the clearing window.
+	ExitReason       string    `json:"exit_reason,omitempty"`
+	ClearingBooks    bool      `json:"clearing_books,omitempty"`
+	BooksCleared     bool      `json:"books_cleared,omitempty"`
+	ClearStarted     time.Time `json:"clear_started,omitempty"`
+	ClearFinished    time.Time `json:"clear_finished,omitempty"`
+	RemoteClients    int       `json:"remote_client_connections,omitempty"`
+	RemoteLeafNodes  int       `json:"remote_leafnode_connections,omitempty"`
+	PendingResponses int       `json:"pending_responses,omitempty"`
+	PendingSamples   int       `json:"pending_response_samples,omitempty"`
+	PendingReplyMap  int       `json:"pending_reply_mappings,omitempty"`
 }
 
 type Accountz struct {
@@ -2948,8 +2963,22 @@ func (s *Server) accountInfo(accName string) (*AccountInfo, error) {
 		}
 	}
 	responses := map[string]ExtImport{}
+	var pendingSamples, pendingReplyMap int
 	for k, v := range a.exports.responses {
 		responses[k] = newExtImport(v)
+		if v.tracking || v.m1 != nil {
+			pendingSamples++
+		}
+	}
+	for _, re := range a.imports.rrMap {
+		pendingReplyMap += len(re.list)
+	}
+	var exitReason string
+	switch a.exitReason.Load() {
+	case accExitExpired:
+		exitReason = "expired"
+	case accExitRevoked:
+		exitReason = "revoked"
 	}
 	mappings := ExtMap{}
 	for _, m := range a.mappings {
@@ -2996,6 +3025,17 @@ func (s *Server) accountInfo(accName string) (*AccountInfo, error) {
 		RevokedUser: collectRevocations(a.usersRevoked),
 		Sublist:     a.sl.Stats(),
 		Responses:   responses,
+
+		ExitReason:       exitReason,
+		ClearingBooks:    a.clearing,
+		BooksCleared:     a.cleared,
+		ClearStarted:     a.clearStarted,
+		ClearFinished:    a.clearFinished,
+		RemoteClients:    int(a.nrclients),
+		RemoteLeafNodes:  int(a.nrleafs),
+		PendingResponses: len(responses),
+		PendingSamples:   pendingSamples,
+		PendingReplyMap:  pendingReplyMap,
 	}, nil
 }
 

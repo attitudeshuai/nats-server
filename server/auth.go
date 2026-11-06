@@ -1036,6 +1036,11 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 		}
 		if acc, err = s.LookupAccount(issuer); acc == nil {
 			c.Debugf("Account JWT lookup error: %v", err)
+			// Make an expired account rejection identifiable instead of a
+			// generic authorization violation.
+			if err == ErrAccountExpired {
+				c.setAuthError(ErrAccountExpired)
+			}
 			return false
 		}
 		acc.mu.RLock()
@@ -1066,6 +1071,11 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 		}
 		if acc.IsExpired() {
 			c.Debugf("Account JWT has expired")
+			// Refuse the connection while ledgers are being cleared and
+			// report the account expiration reason explicitly. Expiration
+			// and revocation share the wire reason; they are told apart
+			// server-side via the account exit reason.
+			c.setAuthError(ErrAccountExpired)
 			return false
 		}
 		if juc.BearerToken && acc.failBearer() {
@@ -1854,6 +1864,8 @@ func getAuthErrClosedState(authErr error) ClosedState {
 		return ProxyNotTrusted
 	case ErrAuthProxyRequired:
 		return ProxyRequired
+	case ErrAccountExpired:
+		return AuthenticationExpired
 	default:
 		return AuthenticationViolation
 	}

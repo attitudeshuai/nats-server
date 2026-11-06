@@ -2591,6 +2591,11 @@ func (c *client) authViolation() {
 	}
 	if c.isMqtt() {
 		c.mqttEnqueueConnAck(mqttConnAckRCNotAuthorized, false)
+	} else if errors.Is(authErr, ErrAccountExpired) {
+		// Reuse the existing expiration wording so a connection refused while
+		// the account is retired reports the same identifiable reason as a
+		// client disconnected for it.
+		c.sendErr("Account Authentication Expired")
 	} else {
 		// Send this to client, regardless of the authErr override.
 		c.sendErr("Authorization Violation")
@@ -4642,6 +4647,12 @@ func (c *client) handleGWReplyMap(msg []byte) bool {
 // Used to setup the response map for a service import request that has a reply subject.
 func (c *client) setupResponseServiceImport(acc *Account, si *serviceImport, hasLatency, tracking bool, header http.Header) *serviceImport {
 	rsi := si.acc.addRespServiceImport(acc, string(c.pa.reply), si, tracking, header, nil)
+	if rsi == nil {
+		// The responder account left the runtime (expired/revoked). Do not
+		// touch the mapping; the request fails delivery here instead of
+		// waiting for a response that can never arrive.
+		return nil
+	}
 	if hasLatency {
 		if c.rtt == 0 {
 			// We have a service import that we are tracking but have not established RTT.

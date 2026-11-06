@@ -825,6 +825,11 @@ func (t *msgTrace) sendEvent() {
 
 func (t *msgTrace) setupResponseServiceImport(c *client, acc *Account, si *serviceImport, msg []byte) (*serviceImport, []byte) {
 	rsi := si.acc.addRespServiceImport(acc, t.dest, si, false, nil, t)
+	if rsi == nil {
+		// Responder account expired or was revoked while the request was in
+		// flight. Nothing to trace a response against.
+		return nil, msg
+	}
 	t.dest = rsi.from
 	t.siMu.Lock()
 	t.si = append(t.si, &msgTraceServiceImport{rsi, si.acc})

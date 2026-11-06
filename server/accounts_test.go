@@ -15,6 +15,7 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -4094,6 +4095,435 @@ func TestAccountImportDuplicateResponseDeliveryWithLeafnodes(t *testing.T) {
 
 	if n, _, _ := sub.Pending(); n > 1 {
 		t.Fatalf("Expected only 1 response, got %d", n)
+	}
+}
+
+// namedClientConn creates a TCP client and rebinds it to the given account,
+// the same trick used by cross-account latency tests.
+func namedClientConn(t *testing.T, s *Server, name string, acc *Account) *nats.Conn {
+	t.Helper()
+	nc := natsConnect(t, s.ClientURL(), nats.Name(name))
+	s.mu.Lock()
+	var tc *client
+	for _, c := range s.clients {
+		c.mu.Lock()
+		if c.opts.Name == name {
+			tc = c
+		}
+		c.mu.Unlock()
+		if tc != nil {
+			break
+		}
+	}
+	s.mu.Unlock()
+	if tc == nil {
+		t.Fatalf("Did not find client %q", name)
+	}
+	if err := tc.registerWithAccount(acc); err != nil {
+		t.Fatalf("Error registering client %q with account: %v", name, err)
+	}
+	return nc
+}
+
+// TestAccountRetireExpiryClearsBooks verifies that expiring an account clears,
+// within a bounded (here immediate) window, the remote connection counts, the
+// response ledger and the requestor side reverse entries, that the process is
+// idempotent and never leaves negative counts, and that the state is visible
+// through accountz.
+func TestAccountRetireExpiryClearsBooks(t *testing.T) {
+	s, fooAcc, barAcc := simpleAccountServer(t)
+	t.Cleanup(s.Shutdown)
+
+	if err := fooAcc.AddServiceExport("test", nil); err != nil {
+		t.Fatalf("Error adding service export: %v", err)
+	}
+	if err := barAcc.AddServiceImport(fooAcc, "test", _EMPTY_); err != nil {
+		t.Fatalf("Error adding service import: %v", err)
+	}
+
+	cfoo, rfoo, _ := newClientForServer(s)
+	t.Cleanup(cfoo.close)
+	var fooWire bytes.Buffer
+	go io.Copy(io.Discard, io.TeeReader(rfoo, &fooWire))
+	if err := cfoo.registerWithAccount(fooAcc); err != nil {
+		t.Fatalf("Error registering client with 'foo' account: %v", err)
+	}
+	cfoo.parse([]byte("SUB test 1\r\n"))
+
+	cbar, rbar, _ := newClientForServer(s)
+	t.Cleanup(cbar.close)
+	go io.Copy(io.Discard, rbar)
+	if err := cbar.registerWithAccount(barAcc); err != nil {
+		t.Fatalf("Error registering client with 'bar' account: %v", err)
+	}
+	cbar.parse([]byte("SUB my.inbox 11\r\n"))
+
+	const numReqs = 5
+	for i := 0; i < numReqs; i++ {
+		cbar.parse([]byte("PUB test my.inbox 4\r\nhelp\r\n"))
+	}
+
+	// Seed remote connection counts for the expiring account.
+	upd := &AccountNumConns{Server: ServerInfo{ID: "remote-1"}}
+	upd.Conns = 3
+	upd.LeafNodes = 2
+	fooAcc.updateRemoteServer(upd)
+
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if got := fooAcc.NumPendingAllResponses(); got != numReqs {
+			return fmt.Errorf("expected %d outstanding responses, got %d", numReqs, got)
+		}
+		if got := barAcc.numReverseRespEntries(); got != numReqs {
+			return fmt.Errorf("expected %d reverse entries, got %d", numReqs, got)
+		}
+		rcl, rlf := fooAcc.numRemoteConnections()
+		if rcl != 3 || rlf != 2 {
+			return fmt.Errorf("expected remote counts (3,2), got (%d,%d)", rcl, rlf)
+		}
+		return nil
+	})
+
+	// Expire the account. Everything is resolved synchronously.
+	fooAcc.expiredTimeout()
+
+	if !fooAcc.IsExpired() {
+		t.Fatalf("Expected account to be expired")
+	}
+	if fooAcc.ExitReasonCode() != accExitExpired {
+		t.Fatalf("Expected exit reason %d, got %d", accExitExpired, fooAcc.ExitReasonCode())
+	}
+	if !fooAcc.BooksCleared() {
+		t.Fatalf("Expected books to be cleared")
+	}
+	if got := fooAcc.NumPendingAllResponses(); got != 0 {
+		t.Fatalf("Expected no outstanding responses after expiry, got %d", got)
+	}
+	if got := fooAcc.numReverseRespEntries(); got != 0 {
+		t.Fatalf("Expected no reverse entries on the expired account, got %d", got)
+	}
+	if got := fooAcc.numPendingSamples(); got != 0 {
+		t.Fatalf("Expected no pending samples after expiry, got %d", got)
+	}
+	rcl, rlf := fooAcc.numRemoteConnections()
+	if rcl != 0 || rlf != 0 {
+		t.Fatalf("Expected remote counts zeroed, got (%d,%d)", rcl, rlf)
+	}
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if got := barAcc.numReverseRespEntries(); got != 0 {
+			return fmt.Errorf("expected requestor side reverse entries cleaned up, got %d", got)
+		}
+		return nil
+	})
+	if barAcc.IsExpired() {
+		t.Fatalf("The importing account should not have been retired")
+	}
+
+	// The connected client must have been told why it was disconnected.
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if !cfoo.isClosed() {
+			return fmt.Errorf("responder client was not closed")
+		}
+		if !strings.Contains(fooWire.String(), "Account Authentication Expired") {
+			return fmt.Errorf("expected expiry reason on the wire, got %q", fooWire.String())
+		}
+		return nil
+	})
+
+	// Idempotency: triggering again must not double-decrement anything or
+	// resurrect state.
+	fooAcc.expiredTimeout()
+	fooAcc.expiredTimeout()
+	rcl, rlf = fooAcc.numRemoteConnections()
+	if rcl != 0 || rlf != 0 {
+		t.Fatalf("Expected remote counts to stay zeroed, got (%d,%d)", rcl, rlf)
+	}
+	if got := fooAcc.NumPendingAllResponses(); got != 0 {
+		t.Fatalf("Expected no outstanding responses, got %d", got)
+	}
+
+	// Remote conn updates arriving after expiry are ignored until renewal.
+	upd2 := &AccountNumConns{Server: ServerInfo{ID: "remote-1"}}
+	upd2.Conns = 7
+	upd2.LeafNodes = 9
+	if clients := fooAcc.updateRemoteServer(upd2); clients != nil {
+		t.Fatalf("Expected no rebalance clients while expired")
+	}
+	rcl, rlf = fooAcc.numRemoteConnections()
+	if rcl != 0 || rlf != 0 {
+		t.Fatalf("Remote counts resurrected while expired: (%d,%d)", rcl, rlf)
+	}
+
+	// New response mappings must not be created against the retired account.
+	sis := barAcc.imports.services["test"]
+	if len(sis) == 0 {
+		t.Fatalf("Expected service import to still be configured")
+	}
+	if rsi := fooAcc.addRespServiceImport(barAcc, "my.inbox", sis[0], false, nil, nil); rsi != nil {
+		t.Fatalf("Expected new response mapping to be rejected while expired")
+	}
+
+	// The same residual information is readable through accountz.
+	az, err := s.Accountz(&AccountzOptions{Account: "$foo"})
+	if err != nil {
+		t.Fatalf("Accountz error: %v", err)
+	}
+	ai := az.Account
+	if ai == nil {
+		t.Fatalf("Expected account detail")
+	}
+	if !ai.Expired || ai.ExitReason != "expired" {
+		t.Fatalf("Unexpected accountz state: expired=%v exit=%q", ai.Expired, ai.ExitReason)
+	}
+	if !ai.BooksCleared || ai.ClearingBooks {
+		t.Fatalf("Unexpected clearing state: cleared=%v clearing=%v", ai.BooksCleared, ai.ClearingBooks)
+	}
+	if ai.RemoteClients != 0 || ai.RemoteLeafNodes != 0 {
+		t.Fatalf("Expected zero remote counts in accountz, got (%d,%d)", ai.RemoteClients, ai.RemoteLeafNodes)
+	}
+	if ai.PendingResponses != 0 || ai.PendingReplyMap != 0 || ai.PendingSamples != 0 {
+		t.Fatalf("Expected zero residuals in accountz, got responses=%d replymap=%d samples=%d",
+			ai.PendingResponses, ai.PendingReplyMap, ai.PendingSamples)
+	}
+	if ai.ClearFinished.IsZero() {
+		t.Fatalf("Expected clear finish timestamp to be reported")
+	}
+}
+
+// TestAccountRetireRevokeReason verifies revocation is distinguishable from
+// expiration server-side (accountz exit_reason), the existing wire protocol
+// wording stays unchanged, and revocation is never downgraded by a later
+// expiration callback.
+func TestAccountRetireRevokeReason(t *testing.T) {
+	s, fooAcc, _ := simpleAccountServer(t)
+	t.Cleanup(s.Shutdown)
+
+	cfoo, rfoo, _ := newClientForServer(s)
+	t.Cleanup(cfoo.close)
+	var wire bytes.Buffer
+	go io.Copy(io.Discard, io.TeeReader(rfoo, &wire))
+	if err := cfoo.registerWithAccount(fooAcc); err != nil {
+		t.Fatalf("Error registering client with 'foo' account: %v", err)
+	}
+
+	removeCb(s, "$foo")
+
+	if fooAcc.ExitReasonCode() != accExitRevoked {
+		t.Fatalf("Expected revoked exit reason, got %d", fooAcc.ExitReasonCode())
+	}
+	if !fooAcc.BooksCleared() {
+		t.Fatalf("Expected books to be cleared after revocation")
+	}
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if !cfoo.isClosed() {
+			return fmt.Errorf("client was not closed")
+		}
+		// The existing wire reason must not change for revoked accounts.
+		if !strings.Contains(wire.String(), "Account Authentication Expired") {
+			return fmt.Errorf("expected existing expiration wording on the wire, got %q", wire.String())
+		}
+		return nil
+	})
+
+	// A later expiration must not downgrade the revocation reason.
+	fooAcc.expiredTimeout()
+	if fooAcc.ExitReasonCode() != accExitRevoked {
+		t.Fatalf("Revocation reason was downgraded by expiration: %d", fooAcc.ExitReasonCode())
+	}
+
+	az, err := s.Accountz(&AccountzOptions{Account: "$foo"})
+	if err != nil {
+		t.Fatalf("Accountz error: %v", err)
+	}
+	if az.Account.ExitReason != "revoked" {
+		t.Fatalf("Expected exit_reason=revoked, got %q", az.Account.ExitReason)
+	}
+}
+
+// TestAccountRetireRenewalRebuilds verifies a renewed account becomes usable
+// again with all ledgers starting from zero.
+func TestAccountRetireRenewalRebuilds(t *testing.T) {
+	s, fooAcc, barAcc := simpleAccountServer(t)
+	t.Cleanup(s.Shutdown)
+
+	if err := fooAcc.AddServiceExport("test", nil); err != nil {
+		t.Fatalf("Error adding service export: %v", err)
+	}
+	if err := barAcc.AddServiceImport(fooAcc, "test", _EMPTY_); err != nil {
+		t.Fatalf("Error adding service import: %v", err)
+	}
+
+	// Seed remote counts before expiry.
+	upd := &AccountNumConns{Server: ServerInfo{ID: "remote-1"}}
+	upd.Conns = 3
+	upd.LeafNodes = 2
+	fooAcc.updateRemoteServer(upd)
+
+	fooAcc.expiredTimeout()
+	if !fooAcc.BooksCleared() {
+		t.Fatalf("Expected books to be cleared")
+	}
+
+	// Renew with fresh claims expiring in the future.
+	claims := &jwt.ClaimsData{Expires: time.Now().Add(time.Hour).Unix()}
+	fooAcc.checkExpiration(claims)
+
+	if fooAcc.IsExpired() {
+		t.Fatalf("Expected account to be active after renewal")
+	}
+	if fooAcc.ExitReasonCode() != accExitActive {
+		t.Fatalf("Expected active exit reason, got %d", fooAcc.ExitReasonCode())
+	}
+	if fooAcc.BooksCleared() {
+		t.Fatalf("Cleared flag should reset on renewal")
+	}
+	rcl, rlf := fooAcc.numRemoteConnections()
+	if rcl != 0 || rlf != 0 {
+		t.Fatalf("Expected fresh zero counts on renewal, got (%d,%d)", rcl, rlf)
+	}
+	if got := fooAcc.NumPendingAllResponses(); got != 0 {
+		t.Fatalf("Expected empty response ledger on renewal, got %d", got)
+	}
+
+	// Remote tracking rebuilds from scratch: the first update establishes the
+	// absolute count instead of adjusting an inherited one.
+	upd2 := &AccountNumConns{Server: ServerInfo{ID: "remote-1"}}
+	upd2.Conns = 4
+	upd2.LeafNodes = 1
+	fooAcc.updateRemoteServer(upd2)
+	rcl, rlf = fooAcc.numRemoteConnections()
+	if rcl != 4 || rlf != 1 {
+		t.Fatalf("Expected rebuilt remote counts (4,1), got (%d,%d)", rcl, rlf)
+	}
+
+	// Response mappings work again.
+	cfoo, rfoo, _ := newClientForServer(s)
+	t.Cleanup(cfoo.close)
+	go io.Copy(io.Discard, rfoo)
+	if err := cfoo.registerWithAccount(fooAcc); err != nil {
+		t.Fatalf("Error registering client with 'foo' account: %v", err)
+	}
+	cfoo.parse([]byte("SUB test 1\r\n"))
+
+	cbar, rbar, _ := newClientForServer(s)
+	t.Cleanup(cbar.close)
+	go io.Copy(io.Discard, rbar)
+	if err := cbar.registerWithAccount(barAcc); err != nil {
+		t.Fatalf("Error registering client with 'bar' account: %v", err)
+	}
+	cbar.parse([]byte("SUB my.inbox 11\r\n"))
+	cbar.parse([]byte("PUB test my.inbox 4\r\nhelp\r\n"))
+
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if got := fooAcc.NumPendingAllResponses(); got != 1 {
+			return fmt.Errorf("expected a fresh response entry after renewal, got %d", got)
+		}
+		return nil
+	})
+}
+
+// TestAccountRetireActiveAccountUnaffected checks that the renewal reset path
+// on an account that never expired is a no-op, i.e. deployments without
+// expiration semantics keep working exactly as before.
+func TestAccountRetireActiveAccountUnaffected(t *testing.T) {
+	acc := NewAccount("foo")
+	upd := &AccountNumConns{Server: ServerInfo{ID: "remote-1"}}
+	upd.Conns = 5
+	upd.LeafNodes = 1
+	acc.updateRemoteServer(upd)
+
+	// Claims without expiration: must not touch existing counts.
+	acc.checkExpiration(&jwt.ClaimsData{Expires: 0})
+	if acc.IsExpired() || acc.ExitReasonCode() != accExitActive || acc.BooksCleared() {
+		t.Fatalf("Active account state changed unexpectedly")
+	}
+	rcl, rlf := acc.numRemoteConnections()
+	if rcl != 5 || rlf != 1 {
+		t.Fatalf("Counts changed on an active account: (%d,%d)", rcl, rlf)
+	}
+}
+
+// TestAccountRetireInFlightTrackedRequest verifies that an in-flight tracked
+// service request receives a definite result when the responder account
+// expires instead of hanging until its response timeout.
+func TestAccountRetireInFlightTrackedRequest(t *testing.T) {
+	opts := DefaultTestOptions
+	opts.Port = -1
+	opts.NoLog = true
+	s := RunServer(&opts)
+	t.Cleanup(s.Shutdown)
+
+	fooAcc, err := s.RegisterAccount("$foo")
+	if err != nil {
+		t.Fatalf("Error creating account 'foo': %v", err)
+	}
+	barAcc, err := s.RegisterAccount("$bar")
+	if err != nil {
+		t.Fatalf("Error creating account 'bar': %v", err)
+	}
+
+	if err := fooAcc.AddServiceExport("svc", nil); err != nil {
+		t.Fatalf("AddServiceExport: %v", err)
+	}
+	if err := fooAcc.AddStreamExport("results", nil); err != nil {
+		t.Fatalf("AddStreamExport: %v", err)
+	}
+	if err := fooAcc.TrackServiceExport("svc", "results"); err != nil {
+		t.Fatalf("TrackServiceExport: %v", err)
+	}
+	if err := barAcc.AddServiceImport(fooAcc, "svc", _EMPTY_); err != nil {
+		t.Fatalf("AddServiceImport: %v", err)
+	}
+	if err := barAcc.AddStreamImport(fooAcc, "results", ""); err != nil {
+		t.Fatalf("AddStreamImport: %v", err)
+	}
+
+	// Responder (foo), subscribes but never answers.
+	respNC := namedClientConn(t, s, "responder", fooAcc)
+	defer respNC.Close()
+	respSub := natsSubSync(t, respNC, "svc")
+	natsFlush(t, respNC)
+
+	// Requestor (bar).
+	reqNC := namedClientConn(t, s, "requestor", barAcc)
+	defer reqNC.Close()
+	resSub := natsSubSync(t, reqNC, "results")
+	inboxSub := natsSubSync(t, reqNC, "reply.inbox")
+	natsFlush(t, reqNC)
+
+	natsPubReq(t, reqNC, "svc", "reply.inbox", []byte("help"))
+	if _, err := respSub.NextMsg(time.Second); err != nil {
+		t.Fatalf("Responder did not receive request: %v", err)
+	}
+
+	checkFor(t, time.Second, 10*time.Millisecond, func() error {
+		if got := fooAcc.NumPendingAllResponses(); got != 1 {
+			return fmt.Errorf("expected one outstanding response, got %d", got)
+		}
+		if got := fooAcc.numPendingSamples(); got != 1 {
+			return fmt.Errorf("expected one pending sample, got %d", got)
+		}
+		return nil
+	})
+
+	// Expire the responder account: the tracked request must get a result now.
+	fooAcc.expiredTimeout()
+
+	m, err := resSub.NextMsg(2 * time.Second)
+	if err != nil {
+		t.Fatalf("Expected a definite latency result, got: %v", err)
+	}
+	var sl ServiceLatency
+	if err := json.Unmarshal(m.Data, &sl); err != nil {
+		t.Fatalf("Bad latency result: %v", err)
+	}
+	if sl.Status != 504 || sl.Error != "Service Timeout" {
+		t.Fatalf("Expected a 504 Service Timeout, got %d %q", sl.Status, sl.Error)
+	}
+
+	// The inbox subscription on the requestor side must not see a late
+	// response redelivered after clearing.
+	if _, err := inboxSub.NextMsg(100 * time.Millisecond); err == nil {
+		t.Fatalf("Did not expect a response after clearing")
 	}
 }
 

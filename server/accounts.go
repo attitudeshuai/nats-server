@@ -93,20 +93,33 @@ type Account struct {
 	jsLimits     map[string]JetStreamAccountLimits
 	nrgAccount   string
 	limits
-	expired      atomic.Bool
-	incomplete   bool
-	signingKeys  map[string]jwt.Scope
-	extAuth      *jwt.ExternalAuthorization
-	srv          *Server // server this account is registered with (possibly nil)
-	lds          string  // loop detection subject for leaf nodes
-	siReply      []byte  // service reply prefix, will form wildcard subscription.
-	eventIds     *nuid.NUID
-	eventIdsMu   sync.Mutex
-	defaultPerms *Permissions
-	tags         jwt.TagList
-	nameTag      string
-	lastLimErr   int64
-	routePoolIdx int
+	expired atomic.Bool
+	// exitReason records why the account left the runtime once expired is
+	// set. Read lock-free on connection and message hot paths. See the
+	// accExit* constants.
+	exitReason atomic.Uint32
+	// Runtime bookkeeping state for an expired or revoked account. All of
+	// these are guarded by mu. The ledgers (strack, exports.responses and
+	// imports.rrMap) are cleared once per retirement epoch and rebuilt from
+	// zero if the account is renewed.
+	clearGen      uint32 // bumped every time the account returns to active runtime
+	clearing      bool   // ledger clearing is in progress
+	cleared       bool   // ledgers have been cleared for the current clearGen
+	clearStarted  time.Time
+	clearFinished time.Time
+	incomplete    bool
+	signingKeys   map[string]jwt.Scope
+	extAuth       *jwt.ExternalAuthorization
+	srv           *Server // server this account is registered with (possibly nil)
+	lds           string  // loop detection subject for leaf nodes
+	siReply       []byte  // service reply prefix, will form wildcard subscription.
+	eventIds      *nuid.NUID
+	eventIdsMu    sync.Mutex
+	defaultPerms  *Permissions
+	tags          jwt.TagList
+	nameTag       string
+	lastLimErr    int64
+	routePoolIdx  int
 	// If the trace destination is specified and a message with a traceParentHdr
 	// is received, and has the least significant bit of the last token set to 1,
 	// then if traceDestSampling is > 0 and < 100, a random value will be selected
@@ -121,6 +134,13 @@ type Account struct {
 const (
 	accDedicatedRoute                = -1
 	accTransitioningToDedicatedRoute = -2
+)
+
+// Why an account has exited the active runtime. Stored in Account.exitReason.
+const (
+	accExitActive  uint32 = iota // account is active
+	accExitExpired               // account JWT expired
+	accExitRevoked               // account was revoked/removed by its resolver
 )
 
 // Account based limits.
@@ -501,6 +521,12 @@ func (a *Account) getExternalClientsLocked() []*client {
 // has for this account.
 func (a *Account) updateRemoteServer(m *AccountNumConns) []*client {
 	a.mu.Lock()
+	// An expired/revoked account keeps its remote counts at zero until it is
+	// renewed. Accepting updates here would resurrect counts we just cleared.
+	if a.expired.Load() {
+		a.mu.Unlock()
+		return nil
+	}
 	if a.strack == nil {
 		a.strack = make(map[string]sconns)
 	}
@@ -1899,6 +1925,14 @@ func (a *Account) removeRespServiceImport(si *serviceImport, reason rsiReason) {
 
 	a.mu.Lock()
 	c := a.ic
+	// Idempotency guard: if this mapping is no longer in the ledger it was
+	// already resolved, either normally or by account retirement. Do not run
+	// the side effects again, otherwise an in-flight request could get two
+	// timeout results and the requestor side could be touched twice.
+	if cur := a.exports.responses[si.from]; cur == nil || cur != si {
+		a.mu.Unlock()
+		return
+	}
 	delete(a.exports.responses, si.from)
 	dest, to, tracking, rc, didDeliver := si.acc, si.to, si.tracking, si.rc, si.didDeliver
 	a.mu.Unlock()
@@ -1979,7 +2013,16 @@ func (a *Account) removeServiceImport(dstAccName, subject string) {
 
 // This tracks responses to service requests mappings. This is used for cleanup.
 func (a *Account) addReverseRespMapEntry(acc *Account, reply, from string) {
+	// A retired account must not accumulate new reply mappings; they would
+	// outlive the account waiting for their timeouts.
+	if a.expired.Load() {
+		return
+	}
 	a.mu.Lock()
+	if a.expired.Load() {
+		a.mu.Unlock()
+		return
+	}
 	a.imports.addRespEntry(reply, &serviceRespEntry{acc, from})
 	a.mu.Unlock()
 }
@@ -2676,6 +2719,12 @@ func (a *Account) SetServiceExportAllowTrace(export string, allowTrace bool) err
 
 // This is for internal service import responses.
 func (a *Account) addRespServiceImport(dest *Account, to string, osi *serviceImport, tracking bool, header http.Header, mt *msgTrace) *serviceImport {
+	// Refuse to register new outstanding responses on a retired responder
+	// account. Callers treat nil as "no response mapping" and fail the
+	// request immediately instead of leaving it hanging.
+	if a.expired.Load() {
+		return nil
+	}
 	nrr := string(osi.acc.newServiceReply(tracking))
 
 	dest.mu.Lock()
@@ -2683,6 +2732,11 @@ func (a *Account) addRespServiceImport(dest *Account, to string, osi *serviceImp
 	dest.mu.Unlock()
 
 	a.mu.Lock()
+	// Recheck under the lock to close the race with account retirement.
+	if a.expired.Load() {
+		a.mu.Unlock()
+		return nil
+	}
 
 	// dest is the requestor's account. a is the service responder with the export.
 	// Marked as internal here, that is how we distinguish.
@@ -3286,18 +3340,225 @@ func (a *Account) IsExpired() bool {
 	return a.expired.Load()
 }
 
+// ExitReasonCode returns why the account left the active runtime. The returned
+// value is one of the accExit* constants.
+func (a *Account) ExitReasonCode() uint32 {
+	return a.exitReason.Load()
+}
+
 // Called when an account has expired.
 func (a *Account) expiredTimeout() {
-	// Mark expired first.
-	a.expired.Store(true)
+	a.retire(accExitExpired)
+}
 
-	// Collect the clients and expire them.
+// revoke is called when an account has been revoked/removed by its resolver.
+func (a *Account) revoke() {
+	a.retire(accExitRevoked)
+}
+
+// retire takes an expired or revoked account out of the runtime. It marks the
+// account so no new connection or request can be accepted, disconnects the
+// account's clients and clears all runtime bookkeeping (remote connection
+// counts, the service response ledger and pending sampled responses) in a
+// bounded window instead of waiting for per-entry timeouts.
+//
+// retire is idempotent. Disconnects are idempotent on the client side and the
+// ledger is cleared once per retirement epoch, so triggering expiration and
+// revocation in any order or repeating either never double-counts or leaves
+// negative counters. Revocation is the stronger reason and is not downgraded
+// by a later expiration.
+func (a *Account) retire(reason uint32) {
+	// Mark first, before doing anything else, so new connections and requests
+	// are refused for the whole wind down.
+	a.expired.Store(true)
+	if reason == accExitRevoked {
+		a.exitReason.Store(accExitRevoked)
+	} else {
+		// First time we leave the runtime as expired. A stored revocation
+		// reason is not downgraded by a later expiration callback.
+		a.exitReason.CompareAndSwap(accExitActive, accExitExpired)
+	}
+
+	// Collect the clients and disconnect them. The wire protocol reason is
+	// intentionally left unchanged for both expiration and revocation; the
+	// distinction is reported server-side via exitReason/accountz.
 	cs := a.getClients()
 	for _, c := range cs {
 		if !isInternalClient(c.kind) {
 			c.accountAuthExpired()
 		}
 	}
+
+	// Clear the remote connection counts, the response ledger and sampling
+	// entries so they do not linger until their per-entry timeouts fire.
+	a.clearAccountBooks()
+}
+
+// clearAccountBooks zeroes the account side runtime ledgers:
+//
+//   - remote client/leafnode counts (strack, nrclients, nrleafs)
+//   - outstanding service response mappings (exports.responses), including
+//     pending latency tracking samples, which receive a definite timeout
+//     result instead of hanging
+//   - reply-to-responder reverse entries on the import side (imports.rrMap)
+//
+// Counts are reset by assignment, never by per-entry decrement, so a repeat
+// trigger can not produce negative numbers. Clearing once per retirement epoch
+// guarantees side effects (unsubs, timeout results, reverse cleanup) run
+// exactly once. Safe to call repeatedly.
+func (a *Account) clearAccountBooks() {
+	a.mu.Lock()
+	if a.cleared || a.clearing {
+		a.mu.Unlock()
+		return
+	}
+	a.clearing = true
+	a.clearStarted = time.Now()
+	gen := a.clearGen
+
+	// Detach the whole response ledger in one step. Per-entry response
+	// threshold timers and late replies can then no longer walk or repopulate
+	// it; removeRespServiceImport becomes a no-op for the detached entries.
+	responses := a.exports.responses
+	a.exports.responses = nil
+	// Outstanding responses must not be reaped a second time by their
+	// service export threshold timer.
+	for _, se := range a.exports.services {
+		if se != nil {
+			se.clearResponseThresholdTimer()
+		}
+	}
+
+	// Snapshot the requestor side reverse entries (reply subject -> response
+	// mappings on responder accounts) so they can be resolved below.
+	var rrReplies []string
+	if len(a.imports.rrMap) > 0 {
+		rrReplies = make([]string, 0, len(a.imports.rrMap))
+		for reply := range a.imports.rrMap {
+			rrReplies = append(rrReplies, reply)
+		}
+	}
+
+	// Reset remote counts deterministically. Remote updates are rejected while
+	// expired, so the zero can not be resurrected before renewal.
+	a.strack = nil
+	a.nrclients = 0
+	a.nrleafs = 0
+	ic := a.ic
+	hasSrv := a.srv != nil
+	a.mu.Unlock()
+
+	if hasSrv {
+		// Resolve all outstanding response mappings exactly once: drop any
+		// explicit subscription, give tracked in-flight requests a definite
+		// timeout result, and remove the reverse entry on the requestor side
+		// so a late response can not be delivered after clearing.
+		for _, si := range responses {
+			if len(si.sid) > 0 && ic != nil {
+				ic.processUnsub(si.sid)
+			}
+			if si.tracking && si.rc != nil && !si.didDeliver {
+				a.sendBackendErrorTrackingLatency(si, rsiTimeout)
+			}
+			si.acc.checkForReverseEntry(si.to, si, false)
+		}
+		// Resolve reverse entries for requests originating in this account;
+		// this also removes the matching mapping on the responder account.
+		for _, reply := range rrReplies {
+			a._checkForReverseEntry(reply, nil, false, false)
+		}
+	}
+
+	a.mu.Lock()
+	a.clearing = false
+	// Only record completion if the account was not renewed while we were
+	// clearing. On renewal reactivateLocked() already left the ledgers empty
+	// and bumped the generation; on the next retirement we clear again.
+	if a.clearGen == gen {
+		a.cleared = true
+		a.clearFinished = time.Now()
+	}
+	a.mu.Unlock()
+}
+
+// reactivateLocked returns a previously expired/revoked account to active
+// runtime and guarantees the runtime ledgers start from zero instead of
+// inheriting pre-expiration counts. The account lock must be held.
+func (a *Account) reactivateLocked() {
+	if !a.expired.Load() && a.exitReason.Load() == accExitActive {
+		return
+	}
+	a.expired.Store(false)
+	a.exitReason.Store(accExitActive)
+	a.clearing = false
+	a.cleared = false
+	a.clearStarted = time.Time{}
+	a.clearFinished = time.Time{}
+	// A new retirement epoch starts with fresh ledgers.
+	a.clearGen++
+	a.strack = nil
+	a.nrclients = 0
+	a.nrleafs = 0
+	a.exports.responses = nil
+	a.imports.rrMap = nil
+}
+
+// ClearInProgress reports whether the account is currently clearing its ledgers.
+func (a *Account) ClearInProgress() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.clearing
+}
+
+// BooksCleared reports whether the account's runtime ledgers have been cleared
+// since it expired or was revoked.
+func (a *Account) BooksCleared() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.cleared
+}
+
+// ClearTiming returns when ledger clearing started and finished for the current
+// retirement. The zero value means the timestamp is not set.
+func (a *Account) ClearTiming() (started, finished time.Time) {
+	a.mu.RLock()
+	started, finished = a.clearStarted, a.clearFinished
+	a.mu.RUnlock()
+	return
+}
+
+// numRemoteConnections returns the remote clients and leafnodes tracked for
+// this account across the cluster.
+func (a *Account) numRemoteConnections() (clients, leafs int) {
+	a.mu.RLock()
+	clients, leafs = int(a.nrclients), int(a.nrleafs)
+	a.mu.RUnlock()
+	return
+}
+
+// numPendingSamples returns how many outstanding service responses are being
+// sampled for latency tracking (tracking enabled or awaiting a remote sample).
+func (a *Account) numPendingSamples() int {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	var n int
+	for _, si := range a.exports.responses {
+		if si.tracking || si.m1 != nil {
+			n++
+		}
+	}
+	return n
+}
+
+// numReverseRespEntries returns the total number of requestor side reply
+// mappings currently tracked by the account.
+func (a *Account) numReverseRespEntries() (n int) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	for _, re := range a.imports.rrMap {
+		n += len(re.list)
+	}
+	return
 }
 
 // Sets the expiration timer for an account JWT that has it set.
@@ -3336,7 +3597,9 @@ func (a *Account) checkExpiration(claims *jwt.ClaimsData) {
 
 	a.clearExpirationTimer()
 	if claims.Expires == 0 {
-		a.expired.Store(false)
+		// Either a renewal or an account without an expiration. Returning to
+		// active runtime rebuilds the ledgers from zero.
+		a.reactivateLocked()
 		return
 	}
 	tn := time.Now().Unix()
@@ -3346,7 +3609,7 @@ func (a *Account) checkExpiration(claims *jwt.ClaimsData) {
 	}
 	expiresAt := time.Duration(claims.Expires - tn)
 	a.setExpirationTimer(expiresAt * time.Second)
-	a.expired.Store(false)
+	a.reactivateLocked()
 }
 
 // hasIssuer returns true if the issuer matches the account
@@ -4528,8 +4791,9 @@ func removeCb(s *Server, pubKey string) {
 	a.updated = time.Now()
 	jsa := a.js
 	a.mu.Unlock()
-	// set the account to be expired and disconnect clients
-	a.expiredTimeout()
+	// Revoke the account: reject new connections, disconnect clients and
+	// clear all runtime bookkeeping for the account.
+	a.revoke()
 	// For JS, we need also to disable it.
 	if js := s.getJetStream(); js != nil && jsa != nil {
 		js.disableJetStream(jsa)
